@@ -53,6 +53,31 @@
   .keys{margin-top:26px;font-size:13px;opacity:.75;line-height:2;max-width:760px}
   .keys b{background:#ffffff1f;border:1px solid #ffffff33;border-radius:5px;padding:1px 7px;margin:0 2px;font-family:monospace}
   .btn{margin-top:18px;padding:12px 30px;font-size:18px;font-weight:700;border-radius:10px;border:0;background:var(--gold);color:#111;cursor:pointer}
+  #armorwrap{height:6px;margin-top:5px}
+  #armorbar{height:100%;width:0;background:#4da3ff;border-radius:6px;transition:width .15s}
+  #lvl{font-size:12px;opacity:.7}
+  #ammo{position:absolute;right:20px;bottom:20px;padding:10px 18px;text-align:center;display:none;min-width:150px}
+  #wname{font-size:13px;opacity:.85}
+  #wammo{font-size:30px;font-weight:800;direction:ltr}
+  #hotbar{margin-top:4px;display:flex;gap:6px;justify-content:center;direction:ltr}
+  #hotbar span{padding:1px 9px;border-radius:5px;border:1px solid #ffffff44;font-size:13px;opacity:.6}
+  #hotbar span.sel{background:var(--gold);color:#111;opacity:1;font-weight:700}
+  #items{position:absolute;left:16px;bottom:16px;padding:8px 14px;font-size:13px;display:none;max-width:420px}
+  #clock{position:absolute;right:16px;top:214px;width:190px;text-align:center;font-size:15px;font-weight:700;text-shadow:0 1px 4px #000}
+  #jailbox{position:absolute;left:50%;top:16px;transform:translateX(-50%);padding:12px 20px;display:none;text-align:center;border-color:#ff9d2e;line-height:1.8;font-size:13px;max-width:420px}
+  #jailtime{font-size:24px;font-weight:800;color:#ff9d2e}
+  #carhp{height:6px;border-radius:4px;background:#4dff9a;margin-top:4px;width:100%}
+  #speedo{min-width:150px}
+  .modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#000a;z-index:20}
+  .modal .box{background:#0e1522;border:1px solid var(--line);border-radius:16px;padding:22px;width:min(560px,94vw);max-height:90vh;overflow:auto}
+  .modal h2{margin-bottom:6px}
+  .shoprow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:15px}
+  .btn.small{margin:0;padding:6px 16px;font-size:14px}
+  .btn[disabled]{opacity:.35;cursor:not-allowed}
+  .qrow{display:flex;gap:8px;justify-content:center;margin-top:22px}
+  .qrow button{padding:7px 16px;border-radius:8px;border:1px solid #fff4;background:#ffffff14;color:#fff;cursor:pointer}
+  .qrow button.sel{background:var(--gold);color:#111;font-weight:700}
+  #bigmap{width:min(86vh,90vw);height:min(86vh,90vw);border-radius:12px;border:3px solid #fff;background:#222}
 </style>
 </head>
 <body>
@@ -63,6 +88,7 @@
     <div id="teamlabel"></div>
     <div id="cash">$0</div>
     <div class="bar"><div id="hpbar"></div></div>
+    <div class="bar" id="armorwrap"><div id="armorbar"></div></div>
     <div id="stars"></div>
   </div>
   <div id="objective" class="panel"></div>
@@ -70,7 +96,11 @@
   <div id="crosshair"></div>
   <div id="robwrap"><div style="margin-bottom:6px;font-weight:700" id="robtext">جاري السرقة...</div><div class="bar"><div id="robbar"></div></div></div>
   <div id="prompt" class="panel"></div>
-  <div id="speedo" class="panel"><span id="speedv">0</span><small>km/h</small></div>
+  <div id="speedo" class="panel"><span id="speedv">0</span><small>km/h</small><div id="carhp"></div></div>
+  <div id="ammo" class="panel"><div id="wname"></div><div id="wammo"></div><div id="hotbar"></div></div>
+  <div id="items" class="panel"></div>
+  <div id="clock"></div>
+  <div id="jailbox" class="panel"><div id="jailtime"></div><div id="jailhint"></div></div>
   <div id="toasts"></div>
 </div>
 <div id="damage"></div>
@@ -90,17 +120,29 @@
     </div>
   </div>
   <div class="keys">
-    <b>W A S D</b> حركة/قيادة · <b>الماوس</b> الكاميرا · <b>كليك</b> إطلاق نار · <b>Shift</b> ركض · <b>Space</b> قفز / فرامل يد<br>
-    <b>E</b> ركوب/نزول/اعتقال/سرقة (اضغط مطولاً) · <b>F</b> شراء سيارة عند المعرض · <b>H</b> منبّه · <b>Esc</b> إيقاف مؤقت
+    <b>W A S D</b> حركة/قيادة · <b>الماوس</b> الكاميرا · <b>كليك</b> إطلاق نار · <b>Shift</b> ركض · <b>Space</b> قفز / فرامل يد · <b>R</b> تعبئة · <b>1-4</b> أسلحة · <b>Q</b> إسعاف<br>
+    <b>E</b> ركوب/نزول/اعتقال/سرقة/متاجر (مطولاً للسرقة) · <b>H</b> منبّه · <b>X</b> سارينة · <b>M</b> خريطة كبيرة · <b>T</b> مطر · <b>Esc</b> إيقاف
   </div>
+  <button class="btn" id="resetsave" style="background:#ffffff22;color:#fff;font-size:13px;padding:6px 14px;margin-top:10px">مسح التقدّم المحفوظ</button>
 </div>
 
 <div id="pause" class="overlay hidden">
   <h1 style="font-size:48px">متوقف مؤقتاً</h1>
   <button class="btn" id="resume">متابعة اللعب</button>
+  <div class="qrow"><button data-q="low">جودة منخفضة</button><button data-q="med">متوسطة</button><button data-q="high">عالية</button></div>
 </div>
 
+<div id="shop" class="modal hidden"><div class="box">
+  <h2 id="shoptitle"></h2><div style="margin-bottom:8px">رصيدك: <b id="shopcash" style="color:var(--green)"></b></div>
+  <div id="shoplist"></div><div style="text-align:center"><button class="btn" id="shopclose">إغلاق</button></div>
+</div></div>
+<div id="bigmapwrap" class="modal hidden"><div style="text-align:center"><canvas id="bigmap" width="700" height="700"></canvas><br><button class="btn" id="bigmapclose">إغلاق (M)</button></div></div>
+
 <script src="lib/three.min.js"></script>
-<script src="game.js"></script>
+<script src="js/core.js"></script>
+<script src="js/world.js"></script>
+<script src="js/actors.js"></script>
+<script src="js/game.js"></script>
+<script>setInterval(function(){fetch('/__ping').catch(function(){})},5000)</script>
 </body>
 </html>
