@@ -72,7 +72,7 @@ function spawnCop(x, z, patrol) {
 }
 function spawnCrook() {
   const s = pick(spots), hm = makeHuman(0x3a3a3a, 0x1e1e1e, 0xe0b890, 0x111111, true, 'crook');
-  const e = initHuman('crook', hm, s.x + rnd(-6, 6), s.z + rnd(2, 9));
+  const e = initHuman('crook', hm, (s.ex ?? s.x) + rnd(-6, 6), (s.ez ?? s.z) + rnd(2, 9));
   e.state = 'robbing'; e.t = 26; e.spot = s; e.value = Math.round((s.reward[0] + s.reward[1]) / 4); e.carT = 0;
   const arrow = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.7, 4), new THREE.MeshBasicMaterial({ color: 0xff3030 }));
   arrow.rotation.x = Math.PI; arrow.position.y = 2.5; e.mesh.add(arrow); e.arrow = arrow; crooks.push(e);
@@ -86,12 +86,15 @@ function spawnGuard(def, route) {
   if (e.tower) e.rot = Math.atan2(prison.x - e.x, prison.z - e.z);
   guards.push(e); return e;
 }
+const bloodTex = (() => { const k = document.createElement('canvas'); k.width = k.height = 64; const g2 = k.getContext('2d'), r = g2.createRadialGradient(32, 32, 2, 32, 32, 31); r.addColorStop(0, 'rgba(110,8,8,.85)'); r.addColorStop(0.6, 'rgba(90,8,8,.6)'); r.addColorStop(1, 'rgba(90,8,8,0)'); g2.fillStyle = r; g2.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(k); })();
+const bloodMat = new THREE.MeshBasicMaterial({ map: bloodTex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1 });
 function killHuman(e) {
-  e.dead = true; e.state = 'dead'; e.t = 6; e.mesh.rotation.x = -Math.PI / 2; e.mesh.visible = true;
+  e.dead = true; e.state = 'dead'; e.t = 9; e.fall = 0; e.twist = rnd(-0.5, 0.5); e.phoneT = 0; e.mesh.visible = true; e.up = false;
+  if (!(e.y > 1)) { const b = new THREE.Mesh(blobGeo, bloodMat); b.scale.set(1.5, 1, 1.5); b.position.set(e.x, 0.09, e.z); b.visible = false; scene.add(b); e.blood = b; }
   if (e.arrow) e.arrow.visible = false;
   if (e.car) crookLeaveCar(e, e.car, true);
 }
-function removeHuman(e, list) { scene.remove(e.mesh); const i = list.indexOf(e); if (i >= 0) list.splice(i, 1); }
+function removeHuman(e, list) { scene.remove(e.mesh); if (e.blood) scene.remove(e.blood); const i = list.indexOf(e); if (i >= 0) list.splice(i, 1); }
 function moveHuman(e, dx, dz, spd, dt) {
   const l = Math.hypot(dx, dz); if (l < 1e-4) { e.speed = 0; return; }
   dx /= l; dz /= l;
@@ -128,7 +131,23 @@ function startGetaway(e) {
 }
 
 function updatePeds(dt) {
-  for (const e of peds) { if (e.dead) { e.t -= dt; continue; } e.scared = Math.max(0, e.scared - dt); walkRing(e, dt); }
+  for (let i = peds.length - 1; i >= 0; i--) {
+    const e = peds[i];
+    if (e.dead) { e.t -= dt; continue; }
+    e.scared = Math.max(0, e.scared - dt);
+    if (e.state === 'flee') { e.t -= dt; moveHuman(e, e.x - P.x, e.z - P.z, 6.5, dt); if (e.t <= 0) removeHuman(e, peds); continue; }
+    if (e.state === 'teller') {
+      e.speed = 0; const near = bank && bank.inside(P.x, P.z) && state.started;
+      e.up = !!(near && (mouse.down || P.aimT > 0 || state.wanted > 0 || state.hold)); if (near) e.rot += angDiff(e.rot, Math.atan2(P.x - e.x, P.z - e.z)) * Math.min(1, 6 * dt);
+      continue;
+    }
+    if (e.phoneT > 0) {
+      e.phoneT -= dt; e.speed = 0; e.rot += angDiff(e.rot, Math.atan2(P.x - e.x, P.z - e.z)) * Math.min(1, 8 * dt);
+      if (e.phoneT <= 0) { e.reported = true; if (state.team === 'crim' && !state.jail) setWanted(Math.max(state.wanted, e.pendLevel || 1), (e.pendWhy || 'جريمة') + ' (بلاغ شاهد)'); }
+      continue;
+    }
+    walkRing(e, dt);
+  }
 }
 
 function updateCops(dt) {
@@ -149,6 +168,12 @@ function updateCops(dt) {
         if (lineOfSight(e.x, 1.5, e.z, P.x, 1.2, P.z)) npcShoot(e.x, 1.5, e.z, clamp(0.5 - d / 80, 0.1, 0.45), 6 + state.wanted);
       }
       if (d < 2.6 && !P.car) state.bustT += dt;
+    } else if (e.state === 'guard') {
+      e.speed = 0; e.cd -= dt;
+      if (crim && state.wanted > 0 && d < 80) {
+        e.rot += angDiff(e.rot, Math.atan2(dx, dz)) * Math.min(1, 8 * dt);
+        if (state.wanted >= 2 && d < 50 && e.cd <= 0 && !state.dead) { e.cd = rnd(1, 1.8); if (lineOfSight(e.x, 1.5, e.z, P.x, 1.2, P.z)) npcShoot(e.x, 1.5, e.z, clamp(0.45 - d / 100, 0.08, 0.4), 6 + state.wanted); }
+      }
     } else if (e.state === 'leave') { e.t -= dt; moveHuman(e, -dx, -dz, 3, dt); if (e.t <= 0 || d > 150) removeHuman(e, cops); }
   }
 }
@@ -299,7 +324,7 @@ function traceShot(ox, oy, oz, dx, dy, dz, w) {
       e.stunT = 7; e.speed = 0; if (e.type === 'crook') e.mesh.rotation.x = -1.2; toast('⚡ تم تخديره! اعتقله الآن (E)', 'rgba(20,80,160,.9)', 1800);
     } else {
       e.hp -= w.dmg * (head ? 3 : 1); e.hit && 0;
-      if (e.type === 'ped') { setWanted(Math.max(state.wanted, 1), 'اعتداء على مدني'); }
+      if (e.type === 'ped') crime(1, 'اعتداء على مدني', e.x, e.z);
       if (e.type === 'cop' || e.type === 'guard') { if (e.type === 'cop') setWanted(Math.max(state.wanted, 2), 'اعتداء على شرطي'); else if (state.jail) raiseAlarm(); }
       spawnFx(px, py, pz, rnd(-1, 1), rnd(0.5, 2), rnd(-1, 1), 0.5, 0.15, 0.5, 0xaa1111, 0.8);
       if (e.hp <= 0) {
@@ -311,7 +336,7 @@ function traceShot(ox, oy, oz, dx, dy, dz, w) {
   } else if (hitC && state.cur !== 'taser') {
     damageCar(hitC, w.dmg * 0.7, true); spawnFx(px, py, pz, 0, 1, 0, 0.3, 0.15, 0.4, 0xffcc44, 0.8);
     if (state.team === 'crim' && hitC.kind === 'police') setWanted(Math.max(state.wanted, 2), 'إطلاق نار على سيارة شرطة');
-    else if (state.team === 'crim' && hitC.mode === 'traffic' && Math.random() < 0.3) setWanted(Math.max(state.wanted, 1), 'إطلاق نار');
+    else if (state.team === 'crim' && hitC.mode === 'traffic') crime(1, 'إطلاق نار', hitC.x, hitC.z);
   } else if (state.cur !== 'taser') spawnFx(px, py, pz, 0, 0.3, 0, 0.25, 0.1, 0.35, 0xdddddd, 0.6);
   return [px, py, pz];
 }
@@ -331,11 +356,30 @@ function fireWeapon() {
   spawnFx(mz.x, mz.y, mz.z, 0, 0, 0, 0.06, 0.25, 0.5, 0xffdd66, 0.9);
   cam.pitch = clamp(cam.pitch - 0.012 * (state.cur === 'shotgun' ? 3 : 1), -0.25, 1.25);
   if (state.cur !== 'taser') for (const p of peds) if (!p.dead && Math.hypot(p.x - P.x, p.z - P.z) < 40) p.scared = 8;
-  if (state.team === 'crim' && state.cur !== 'taser' && cops.some(c => !c.dead && Math.hypot(c.x - P.x, c.z - P.z) < 30)) setWanted(Math.max(state.wanted, 1), 'إطلاق نار');
+  if (state.team === 'crim' && state.cur !== 'taser') crime(1, 'إطلاق نار');
+  camShake = Math.max(camShake, state.cur === 'shotgun' ? 0.32 : 0.12);
   if (inv.mag <= 0 && inv.res > 0 && state.cur !== 'taser') reloadWeapon();
 }
 function useMedkit() {
   if (state.items.medkit > 0 && P.hp < 100 && !state.dead) { state.items.medkit--; P.hp = Math.min(100, P.hp + 60); toast('💊 استخدمت علبة إسعاف', 'rgba(10,110,50,.9)', 1500); sfx.click(); }
+}
+
+// ---------- witnesses & crime reporting ----------
+function witnessed(x, z) {
+  for (const e of cops) { if (e.dead || e.stunT > 0) continue; const d = Math.hypot(e.x - x, e.z - z); if (d < 60 && lineOfSight(e.x, 1.6, e.z, x, 1.4, z)) return { e, cop: true }; }
+  for (const e of peds) { if (e.dead || e.state === 'flee' && false) continue; const d = Math.hypot(e.x - x, e.z - z); if (d < 38 && lineOfSight(e.x, 1.6, e.z, x, 1.4, z)) return { e, cop: false }; }
+  return null;
+}
+const crimeCd = {};
+function crime(level, why, x = P.x, z = P.z) {
+  if (state.team !== 'crim' || state.jail) return;
+  if ((crimeCd[why] || 0) > state.time) return; crimeCd[why] = state.time + 1.5;
+  const w = witnessed(x, z);
+  if (!w) { if ((crimeCd._none || 0) < state.time) { crimeCd._none = state.time + 8; toast('🕶 لم يرَك أحد', 'rgba(20,60,40,.85)', 1800); } return; }
+  if (w.cop) { setWanted(Math.max(state.wanted, level), why); return; }
+  const e = w.e;
+  if (!(e.phoneT > 0) && !e.reported) { e.phoneT = 3; e.pendLevel = level; e.pendWhy = why; toast('📱 شاهد يتصل بالشرطة! أسكته أو اهرب', 'rgba(150,100,0,.9)', 2500); }
+  else e.pendLevel = Math.max(e.pendLevel || 0, level);
 }
 
 // ---------- damage / wanted / death ----------
@@ -387,7 +431,13 @@ function busted() {
 }
 
 // ---------- cars: enter / exit ----------
-function enterCar(c) { if (c.wreck) return; P.car = c; c.mode = 'player'; c.speed = c.speed || 0; P.mesh.visible = false; c.disTimer = undefined; c.getaway = false; c.beam.visible = true; }
+function enterCar(c) {
+  if (c.wreck) return;
+  if (c.mode === 'traffic' && !c.getaway) {
+    const [rx, rz] = carRight(c), d = spawnPed(); d.ring = null; d.state = 'flee'; d.t = 12; d.x = c.x - rx * 2.4; d.z = c.z - rz * 2.4;
+    toast('😱 السائق هرب من السيارة', undefined, 1800); crime(c.kind === 'police' ? 3 : 1, 'سرقة سيارة', c.x, c.z);
+  } else if (c.mode === 'parked') crime(1, 'سرقة سيارة', c.x, c.z);
+  c.vx = Math.sin(c.h) * (c.speed || 0); c.vz = Math.cos(c.h) * (c.speed || 0); c.w = 0; P.car = c; c.mode = 'player'; c.speed = c.speed || 0; P.mesh.visible = false; c.disTimer = undefined; c.getaway = false; c.beam.visible = true; }
 function exitCar() {
   const c = P.car; if (!c) return;
   const [rx, rz] = carRight(c); let ok = false;
@@ -435,6 +485,39 @@ function updateWanted(dt) {
   if (state.bustT >= (P.car ? 2.5 : 1.6)) busted();
 }
 
+// roadblock with a spike strip (wanted >= 3, player driving fast)
+state.rb = null; state.rbCd = 20;
+function spawnRoadblock() {
+  const c = P.car; if (!c || Math.abs(c.speed) < 10) return false;
+  const axis = Math.abs(Math.sin(c.h)) > Math.abs(Math.cos(c.h)) ? 'x' : 'z', sgn = c.speed >= 0 ? 1 : -1;
+  const dir = (axis === 'x' ? Math.sign(Math.sin(c.h)) : Math.sign(Math.cos(c.h))) * sgn, perp = axis === 'x' ? c.z : c.x, road = clamp(Math.round(perp / S + N / 2), 0, N), rcn = rc(road);
+  if (Math.abs(perp - rcn) > R / 2) return false;
+  const k = ((axis === 'x' ? c.x : c.z) + dir * 170) / S + N / 2, pos = (Math.floor(k) + 0.5 - N / 2) * S;
+  if (Math.abs(pos) > WORLD - 30 || dir * (pos - (axis === 'x' ? c.x : c.z)) < 70) return false;
+  const at = (a, b) => axis === 'x' ? [a, b] : [b, a], other = axis === 'x' ? 'z' : 'x';
+  const rb = { cars: [], cops: [], t: 0, axis, perp: rcn, spos: pos - dir * 11 };
+  for (const off of [-6.75, -2.25, 2.25, 6.75]) { const [x, z] = at(pos, rcn + off), pc = newCar('police', x, z, baseH(other, 1), 'parked'); pc.siren = true; rb.cars.push(pc); }
+  for (const off of [-3, 3]) { const [x, z] = at(pos + dir * 4, rcn + off), cp = spawnCop(x, z); cp.state = 'guard'; cp.rot = Math.atan2(-(axis === 'x' ? dir : 0), -(axis === 'z' ? dir : 0)); rb.cops.push(cp); }
+  const sm = new THREE.Mesh(new THREE.BoxGeometry(axis === 'x' ? 1.4 : 18, 0.12, axis === 'x' ? 18 : 1.4), new THREE.MeshLambertMaterial({ color: 0x151515 })); const [sx, sz] = at(rb.spos, rcn); sm.position.set(sx, 0.12, sz); scene.add(sm); rb.mesh = sm;
+  for (let q = -4; q <= 4; q++) { const sp = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.3, 4), lam(0xcccccc)); const [px, pz] = at(rb.spos, rcn + q * 2); sp.position.set(px, 0.3, pz); scene.add(sp); (rb.spikes = rb.spikes || []).push(sp); }
+  state.rb = rb; toast('🚧 حاجز شرطة أمامك! احذر من شريط المسامير', 'rgba(150,60,0,.9)', 3500); return true;
+}
+function removeRoadblock() {
+  const rb = state.rb; if (!rb) return;
+  for (const c of rb.cars) removeCar(c); for (const e of rb.cops) if (cops.includes(e)) removeHuman(e, cops);
+  scene.remove(rb.mesh); for (const s of rb.spikes || []) scene.remove(s); state.rb = null; state.rbCd = 45;
+}
+function updateRoadblock(dt) {
+  const rb = state.rb;
+  if (!rb) { if (state.wanted >= 3 && !state.jail) { state.rbCd -= dt; if (state.rbCd <= 0) { state.rbCd = 8; spawnRoadblock(); } } return; }
+  rb.t += dt; const c = P.car, far = Math.hypot(P.x - (rb.axis === 'x' ? rb.spos : rb.perp), P.z - (rb.axis === 'x' ? rb.perp : rb.spos)) > 330;
+  if (state.wanted === 0 || state.jail || far || rb.t > 150) { removeRoadblock(); return; }
+  if (c && !c.flat) {
+    const along = (rb.axis === 'x' ? c.x : c.z) - rb.spos, pp = (rb.axis === 'x' ? c.z : c.x) - rb.perp;
+    if (Math.abs(along) < 1.2 + Math.abs(c.speed) * dt && Math.abs(pp) < 9) { c.flat = true; sfx.pop(); camShake = 0.5; toast('💥 انفجرت الإطارات! السيارة صارت بطيئة', 'rgba(150,20,20,.9)', 3500); for (let k = 0; k < 10; k++) spawnFx(c.x + rnd(-1, 1), 0.3, c.z + rnd(-1, 1), rnd(-3, 3), rnd(1, 3), rnd(-3, 3), 0.5, 0.2, 0.5, 0xffc060, 0.8); }
+  }
+}
+
 // police helicopter (wanted >= 4)
 function spawnHeli() {
   const g = new THREE.Group(), mk = (geo, c, x, y, z) => { const m = new THREE.Mesh(geo, lam(c)); m.position.set(x, y, z); m.castShadow = true; g.add(m); return m; };
@@ -464,7 +547,15 @@ function updateHeli(dt) {
 }
 
 // ---------- spots / markers ----------
+function openVault() { bank.vault.open = true; removeCollider(bank.vault.col); }
+function closeVault() { const v = bank.vault; v.open = false; if (!colliders.includes(v.col)) colliders.push(v.col); for (const p of bank.piles) { p.taken = false; p.mesh.visible = true; } }
 function updateSpots(dt) {
+  { const v = bank.vault, bs = spots.find(s => s.key === 'bank');
+    v.door.position.x += ((v.open ? bank.x + 5.3 : bank.x) - v.door.position.x) * Math.min(1, 2.5 * dt);
+    if (v.open && bs.cd <= 0) closeVault();
+    if (v.open && !P.car && !state.dead) for (const p of bank.piles) if (!p.taken && Math.hypot(p.x - P.x, p.z - P.z) < 1.9) { p.taken = true; p.mesh.visible = false; state.cash += p.value; addXp(30); sfx.cash(); toast(`💵 +$${p.value}`, 'rgba(10,110,50,.85)', 1200); }
+    const t = Math.floor(state.time * 2) % 2; for (const l of bank.cams) l.material.color.setHex(t ? 0xff2020 : 0x400808);
+    bank.roof.visible = !(state.started && bank.inside(P.x, P.z)); prison.roof.visible = !(state.started && prison.inCellBlock(P.x, P.z)); }
   for (const s of spots) {
     s.cd = Math.max(0, s.cd - dt);
     const u = s.marker.userData, ready = s.cd <= 0 && state.team === 'crim';
@@ -593,10 +684,10 @@ function interact(dt) {
     if (s) {
       const mult = s.drill && state.items.drill > 0 ? 0.5 : state.items.lockpick > 0 ? 0.7 : 1;
       hold('rob_' + s.key, s.time * mult, `سرقة ${s.name}`, false, () => {
-        const amt = rint(s.reward[0], s.reward[1]); state.cash += amt; s.cd = 150; sfx.cash(); state.robberies++; addXp(200 + s.wanted * 60);
+        const amt = s.key === 'bank' ? 0 : rint(s.reward[0], s.reward[1]); state.cash += amt; s.cd = s.key === 'bank' ? 170 : 150; sfx.cash(); state.robberies++; addXp(200 + s.wanted * 60);
         if (s.drill && state.items.drill > 0) state.items.drill--; else if (state.items.lockpick > 0) state.items.lockpick--;
         setWanted(Math.max(state.wanted, s.wanted), null); state.wantedTimer = 25;
-        toast(`💰 سرقت ${s.name}! +$${amt}`, 'rgba(10,110,50,.9)', 4000); saveGame();
+        if (s.key === 'bank') { openVault(); toast('🔓 فُتحت الخزنة! ادخل وخذ الأموال قبل وصول الشرطة', 'rgba(10,110,50,.9)', 5000); } else toast(`💰 سرقت ${s.name}! +$${amt}`, 'rgba(10,110,50,.9)', 4000); saveGame();
       });
       if (state.hold && state.hold.id === 'rob_' + s.key) {
         if (state.hold.t > 0.6) setWanted(Math.max(state.wanted, Math.floor(s.wanted / 2)), `سرقة ${s.name}`);
@@ -627,6 +718,7 @@ function updateOnFoot(dt) {
   const w = WEAPONS[state.cur];
   if (armed && !state.ui && ((mouse.down && w.auto) || pressed.Mouse0)) fireWeapon();
   animHuman(P, P.speed, dt, aiming);
+  const stp = Math.floor(P.phase / Math.PI); if (stp !== P.lastStep) { P.lastStep = stp; if (P.speed > 1 && P.y < 0.05) sfx.step(); }
   P.mesh.position.set(P.x, P.y, P.z); P.mesh.rotation.y = P.rot;
   for (const c of cars) {
     if (c.mode === 'parked' || Math.abs(c.speed) < 5 || c.wreck) continue;
@@ -650,6 +742,10 @@ function updateCamera(dt) {
   const t = rayWorld(camTarget.x, camTarget.y, camTarget.z, dx, dy, dz, dist + 0.6); if (t < dist + 0.6) dist = Math.max(1.2, t - 0.6);
   camPos.set(camTarget.x + dx * dist, Math.max(0.6, camTarget.y + dy * dist), camTarget.z + dz * dist); camera.position.copy(camPos);
   camera.lookAt(camTarget.x + fx * 12, camTarget.y - sp * 3 + 0.4, camTarget.z + fz * 12);
+  camShake = Math.max(0, camShake - dt * 2.2);
+  if (camShake > 0.01) { camera.position.x += rnd(-1, 1) * camShake * 0.3; camera.position.y += rnd(-1, 1) * camShake * 0.3; camera.position.z += rnd(-1, 1) * camShake * 0.3; }
+  const sr = P.car ? clamp(Math.abs(P.car.speed) / CAR_STATS[P.car.kind].max, 0, 1) : 0, fov = 65 + sr * sr * 16 - (mouse.right && !P.car ? 12 : 0);
+  if (Math.abs(camera.fov - fov) > 0.05) { camera.fov += (fov - camera.fov) * Math.min(1, 5 * dt); camera.updateProjectionMatrix(); }
 }
 
 // ---------- HUD ----------
@@ -747,7 +843,7 @@ function update(dt) {
       if (j.t <= 0 && !state.dead) releaseFromJail();
       else if (!prison.inside(P.x, P.z) && !state.dead) escapePrison(prison.fence.cut ? 'السياج' : prison.gate.open ? 'البوابة' : 'النفق');
     }
-    updateWanted(dt); updateSpots(dt);
+    updateWanted(dt); updateRoadblock(dt); updateSpots(dt);
     state.saveT -= dt; if (state.saveT <= 0) { state.saveT = 12; saveGame(); }
   } else if (state.ui === 'map' && (pressed.KeyM || pressed.Escape)) { state.ui = null; $('bigmapwrap').classList.add('hidden'); tryLock(); }
   if (state.ui === 'shop' && pressed.Escape) closeShop();
@@ -755,8 +851,13 @@ function update(dt) {
   for (const list of [peds, cops, crooks, guards]) for (const e of list) {
     if (e.state === 'incar') continue;
     e.mesh.visible = Math.abs(e.x - camera.position.x) < cullH && Math.abs(e.z - camera.position.z) < cullH;
-    e.mesh.position.set(e.x, e.dead ? (e.y || 0) + 0.35 : (e.y || 0), e.z); e.mesh.rotation.y = e.rot;
-    if (!e.dead) animHuman(e, e.speed, dt, (e.type === 'cop' && e.state === 'chase') || (e.type === 'crook' && (e.state === 'flee')) || (e.type === 'guard' && state.jail && state.jail.alarm > 0));
+    if (e.dead) {
+      e.fall = Math.min(1, (e.fall ?? 1) + dt * 3.2); e.mesh.position.set(e.x, (e.y || 0) + e.fall * 0.22, e.z); e.mesh.rotation.y = e.rot;
+      e.mesh.rotation.x = -e.fall * Math.PI / 2; e.mesh.rotation.z = (e.twist || 0) * e.fall; if (e.blood) { e.blood.visible = e.fall > 0.7 && e.mesh.visible; e.blood.scale.setScalar(Math.min(1.6, 0.5 + (e.fall - 0.7) * 3 + (9 - e.t) * 0.04)); }
+      continue;
+    }
+    e.mesh.position.set(e.x, (e.y || 0), e.z); e.mesh.rotation.y = e.rot;
+    if (!e.dead) animHuman(e, e.speed, dt, (e.type === 'cop' && (e.state === 'chase' || e.state === 'guard')) || (e.type === 'ped' && e.phoneT > 0) || (e.type === 'crook' && (e.state === 'flee')) || (e.type === 'guard' && state.jail && state.jail.alarm > 0));
   }
   for (const list of [peds, cops, crooks, guards]) for (let i = list.length - 1; i >= 0; i--) if (list[i].dead && list[i].t <= 0) removeHuman(list[i], list);
   for (let i = tracers.length - 1; i >= 0; i--) { tracers[i].t -= dt; if (tracers[i].t <= 0) { scene.remove(tracers[i].l); tracers.splice(i, 1); } }
@@ -774,8 +875,10 @@ function update(dt) {
     if (state.started && state.team === 'cop' && !state.jail) { const alive = crooks.filter(e => !e.dead).length; if (alive < 3 + (state.arrests > 5 ? 1 : 0) + (state.arrests > 12 ? 1 : 0) && Math.random() < 0.5) spawnCrook(); }
   }
 
-  const nearChase = state.wanted > 0 && cars.some(c => c.mode === 'chase' && !c.wreck && Math.hypot(c.x - P.x, c.z - P.z) < 120);
-  sfx.update(!!P.car, P.car ? clamp(Math.abs(P.car.speed) / CAR_STATS[P.car.kind].max, 0, 1) : 0, (nearChase || (P.car && P.car.siren)) ? 1 : 0, state.time, state.jail && state.jail.alarm > 0, heli && !heli.leave ? 1 : 0);
+  let chaseD = 1e9; if (state.wanted > 0) for (const c of cars) if (c.mode === 'chase' && !c.wreck) chaseD = Math.min(chaseD, Math.hypot(c.x - P.x, c.z - P.z));
+  const pc = P.car, mx = pc ? CAR_STATS[pc.kind].max : 1;
+  sfx.update({ inCar: !!pc, rpm: pc ? (pc.rpm ?? 0.3) : 0, thr: pc ? (pc.thr || 0) : 0, slip: pc ? (pc.skidding || 0) : 0, speedRatio: pc ? clamp(Math.abs(pc.speed) / mx, 0, 1) : clamp(P.speed / 10, 0, 1) * 0.3,
+    siren: (pc && pc.siren) ? 1 : clamp(1 - chaseD / 180, 0, 1), alarm: !!(state.jail && state.jail.alarm > 0), heli: heli && !heli.leave ? 1 : 0, rain: env.rain, t: state.time });
   updateCamera(dt);
   updateEnv(dt, state.started ? new THREE.Vector3(P.x, 0, P.z) : new THREE.Vector3(0, 0, 0));
   if (pressed.KeyT) env.rainTarget = env.rainTarget > 0 ? 0 : 1;
@@ -831,6 +934,7 @@ for (let i = 0; i < 40; i++) spawnTraffic(null);
 for (let i = 0; i < 50; i++) spawnParked(null);
 for (let i = 0; i < 40; i++) spawnPed();
 for (let i = 0; i < 12; i++) spawnCop(0, 0, true);
+for (const dx of [-9, 0, 9]) { const t = spawnPed(); t.ring = null; t.state = 'teller'; t.x = bank.x + dx; t.z = bank.z + 1.3; t.rot = 0; }
 buildPlayer('cop'); P.mesh.visible = false;
 frame();
-window.__game = { state, P, cars, cops, crooks, peds, guards, spots, specials, prison, startGame, cam, keys, env, sendToJail, escapePrison, WEAPONS };
+window.__game = { bank, crime, openVault, spawnRoadblock, state, P, cars, cops, crooks, peds, guards, spots, specials, prison, startGame, cam, keys, env, sendToJail, escapePrison, WEAPONS };

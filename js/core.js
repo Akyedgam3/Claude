@@ -91,7 +91,7 @@ const rain = (() => {
   return { m, pos, base, n };
 })();
 
-const env = { time: 9.5, night: 0, sunH: 1, rain: 0, rainTarget: 0, rainTimer: rnd(120, 300), facadeMats: [], glow: null };
+const env = { time: 9.5, night: 0, sunH: 1, rain: 0, rainTarget: 0, rainTimer: rnd(120, 300), facadeMats: [], roadMats: [], glow: null };
 const COL = {
   dayTop: new THREE.Color(0x3f86de), dayBot: new THREE.Color(0xbcd9ff), duskTop: new THREE.Color(0x35406e), duskBot: new THREE.Color(0xff9d5c),
   nightTop: new THREE.Color(0x02040c), nightBot: new THREE.Color(0x0c1530), grey: new THREE.Color(0x7d8794)
@@ -127,6 +127,7 @@ function updateEnv(dt, focus) {
   for (const c of clouds) { c.position.x += dt * 6; if (c.position.x > 1000) c.position.x = -1000; c.material.opacity = lerp(0.8, 0.95, env.rain) * (1 - env.night * 0.75); c.material.color.setScalar(lerp(1, 0.55, env.rain)); }
   for (const m of env.facadeMats) m.emissiveIntensity = env.night * 0.95;
   if (env.glow) env.glow.material.opacity = env.night * 0.5;
+  for (const m of env.roadMats) { m.shininess = 20 + env.rain * 70; m.specular.setScalar(0.07 + env.rain * 0.5); m.color.setScalar(1 - env.rain * 0.3); }
   // rain
   env.rainTimer -= dt;
   if (env.rainTimer <= 0) { env.rainTarget = env.rainTarget > 0 ? 0 : (Math.random() < 0.55 ? 1 : 0); env.rainTimer = rnd(90, 260); }
@@ -219,15 +220,18 @@ const sfx = {
   ac: null, init() {
     if (this.ac) return;
     try {
-      const ac = this.ac = new (window.AudioContext || window.webkitAudioContext)();
-      this.eng = ac.createOscillator(); this.eng.type = 'sawtooth'; this.engG = ac.createGain(); this.engG.gain.value = 0;
-      this.eng.connect(this.engG).connect(ac.destination); this.eng.start();
-      this.sir = ac.createOscillator(); this.sir.type = 'sine'; this.sirG = ac.createGain(); this.sirG.gain.value = 0;
-      this.sir.connect(this.sirG).connect(ac.destination); this.sir.start();
-      this.alm = ac.createOscillator(); this.alm.type = 'square'; this.almG = ac.createGain(); this.almG.gain.value = 0;
-      this.alm.connect(this.almG).connect(ac.destination); this.alm.start();
-      this.heli = ac.createOscillator(); this.heli.type = 'sawtooth'; this.heli.frequency.value = 22; this.heliG = ac.createGain(); this.heliG.gain.value = 0;
-      this.heli.connect(this.heliG).connect(ac.destination); this.heli.start();
+      const ac = this.ac = new (window.AudioContext || window.webkitAudioContext)(), out = ac.destination;
+      const loopNoise = () => { const n = ac.sampleRate * 2, b = ac.createBuffer(1, n, ac.sampleRate), d = b.getChannelData(0); for (let k = 0; k < n; k++) d[k] = Math.random() * 2 - 1; const s = ac.createBufferSource(); s.buffer = b; s.loop = true; s.start(); return s; };
+      // engine: two detuned oscillators through a low-pass
+      this.e1 = ac.createOscillator(); this.e1.type = 'sawtooth'; this.e2 = ac.createOscillator(); this.e2.type = 'square';
+      this.engF = ac.createBiquadFilter(); this.engF.type = 'lowpass'; this.engF.frequency.value = 400; this.engG = ac.createGain(); this.engG.gain.value = 0;
+      this.e1.connect(this.engF); this.e2.connect(this.engF); this.engF.connect(this.engG).connect(out); this.e1.start(); this.e2.start();
+      // tyre squeal / wind / rain / city rumble (looped noise through filters)
+      const mkBand = (type, f, q) => { const n = loopNoise(), fl = ac.createBiquadFilter(); fl.type = type; fl.frequency.value = f; fl.Q.value = q || 1; const g = ac.createGain(); g.gain.value = 0; n.connect(fl).connect(g).connect(out); return g; };
+      this.tireG = mkBand('bandpass', 1500, 6); this.windG = mkBand('lowpass', 700, 0.7); this.rainG = mkBand('highpass', 2500, 0.5); this.cityG = mkBand('lowpass', 180, 0.7); this.cityG.gain.value = 0.02;
+      this.sir = ac.createOscillator(); this.sir.type = 'sine'; this.sirG = ac.createGain(); this.sirG.gain.value = 0; this.sir.connect(this.sirG).connect(out); this.sir.start();
+      this.alm = ac.createOscillator(); this.alm.type = 'square'; this.almG = ac.createGain(); this.almG.gain.value = 0; this.alm.connect(this.almG).connect(out); this.alm.start();
+      this.heli = ac.createOscillator(); this.heli.type = 'sawtooth'; this.heli.frequency.value = 22; this.heliG = ac.createGain(); this.heliG.gain.value = 0; this.heli.connect(this.heliG).connect(out); this.heli.start();
     } catch (e) { this.ac = null; }
   },
   noise(dur, vol, lp) {
@@ -242,19 +246,35 @@ const sfx = {
     o.connect(g).connect(ac.destination); o.start(t); o.stop(t + dur);
   },
   shot() { this.noise(0.18, 0.35, 3500); }, smg() { this.noise(0.1, 0.28, 3000); }, shotgun() { this.noise(0.35, 0.5, 2200); },
-  npcShot() { this.noise(0.15, 0.1, 2000); }, crash() { this.noise(0.4, 0.4, 900); },
+  npcShot() { this.noise(0.15, 0.1, 2000); }, crash() { this.noise(0.4, 0.4, 900); }, step() { this.noise(0.07, 0.05, 500); },
   boom() { this.noise(1.2, 0.8, 500); }, taser() { this.tone(1800, 0.25, 0.1, 'square'); this.tone(2400, 0.2, 0.08, 'square', 0.05); },
   click() { this.tone(900, 0.04, 0.08, 'square'); }, reload() { this.tone(300, 0.08, 0.1, 'square'); this.tone(500, 0.08, 0.1, 'square', 0.45); },
-  horn() { this.tone(330, 0.35, 0.12, 'square'); this.tone(415, 0.35, 0.1, 'square'); },
+  horn() { this.tone(330, 0.35, 0.12, 'square'); this.tone(415, 0.35, 0.1, 'square'); }, pop() { this.noise(0.25, 0.5, 1800); },
   cash() { this.tone(880, 0.12, 0.15, 'triangle'); this.tone(1320, 0.2, 0.15, 'triangle', 0.1); },
-  update(inCar, ratio, sirenLevel, t, alarm, heli) {
-    if (!this.ac) return;
-    this.engG.gain.value = inCar ? 0.025 + ratio * 0.03 : 0; this.eng.frequency.value = 45 + ratio * 150;
-    this.sirG.gain.value = sirenLevel * 0.03; this.sir.frequency.value = 650 + 250 * Math.sin(t * 6);
-    this.almG.gain.value = alarm ? 0.025 : 0; this.alm.frequency.value = Math.floor(t * 3) % 2 ? 880 : 620;
-    this.heliG.gain.value = heli * 0.05;
+  update(o) {
+    if (!this.ac) return; const t = this.ac.currentTime, set = (g, v) => g.gain.setTargetAtTime(v, t, 0.08);
+    this.e1.frequency.setTargetAtTime(36 + o.rpm * 105, t, 0.05); this.e2.frequency.setTargetAtTime((36 + o.rpm * 105) * 1.503, t, 0.05);
+    this.engF.frequency.setTargetAtTime(220 + o.thr * 900 + o.rpm * 700, t, 0.06); set(this.engG, o.inCar ? 0.025 + o.thr * 0.03 + o.rpm * 0.02 : 0);
+    set(this.tireG, clamp(o.slip, 0, 1) * 0.1); set(this.windG, (o.inCar ? 0.06 : 0.02) * o.speedRatio); set(this.rainG, o.rain * 0.05); set(this.cityG, 0.02 * (1 - o.rain * 0.3));
+    set(this.sirG, o.siren * 0.035); this.sir.frequency.value = 650 + 250 * Math.sin(o.t * 6);
+    this.almG.gain.value = o.alarm ? 0.025 : 0; this.alm.frequency.value = Math.floor(o.t * 3) % 2 ? 880 : 620; this.heliG.gain.value = o.heli * 0.05;
   }
 };
+
+// ---------- skid marks ----------
+const skid = { max: 700, i: 0, mesh: null };
+function initSkids() {
+  const mat = new THREE.MeshBasicMaterial({ color: 0x0b0b0b, transparent: true, opacity: 0.5, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
+  skid.mesh = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.3, 1.0).rotateX(-Math.PI / 2), mat, skid.max);
+  const z = new THREE.Matrix4().makeScale(0, 0, 0); for (let k = 0; k < skid.max; k++) skid.mesh.setMatrixAt(k, z);
+  skid.mesh.frustumCulled = false; scene.add(skid.mesh);
+}
+const _sq = new THREE.Quaternion(), _sm = new THREE.Matrix4(), _sy = new THREE.Vector3(0, 1, 0), _s1 = new THREE.Vector3(1, 1, 1);
+function addSkid(x, z, h) {
+  if (!skid.mesh) initSkids();
+  _sm.compose(new THREE.Vector3(x, 0.075, z), _sq.setFromAxisAngle(_sy, h), _s1); skid.mesh.setMatrixAt(skid.i, _sm); skid.i = (skid.i + 1) % skid.max; skid.mesh.instanceMatrix.needsUpdate = true;
+}
+let camShake = 0;
 
 // ---------- input ----------
 const keys = {}, pressed = {};

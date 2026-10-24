@@ -155,7 +155,7 @@ function explodeCar(c, byPlayer) {
   if (c.wreck) return;
   c.wreck = true; c.hp = 0; c.burn = 18; c.speed = 0; c.siren = false;
   if (c.mode === 'chase' || c.mode === 'traffic') c.mode = 'idle';
-  explosionFx(c.x, c.z);
+  explosionFx(c.x, c.z); camShake = Math.max(camShake, clamp(1 - Math.hypot(c.x - P.x, c.z - P.z) / 60, 0, 1));
   if (Math.hypot(c.x - P.x, c.z - P.z) < 200) sfx.boom();
   c.mesh.traverse(m => { if (m.isMesh && (m.material === carMat || m.material === vcMat)) m.material = burntMat; });
   c.beam.visible = false;
@@ -168,7 +168,7 @@ function explodeCar(c, byPlayer) {
   for (const o of cars) if (o !== c && !o.wreck && Math.hypot(o.x - c.x, o.z - c.z) < 7) damageCar(o, 45, byPlayer);
   if (c.getaway && c.crook) crookLeaveCar(c.crook, c);
   if (byPlayer && state.team === 'crim' && c.kind === 'police') setWanted(state.wanted + 1, 'تدمير سيارة شرطة');
-  if (byPlayer && state.team === 'crim' && c.mode !== 'chase' && c.kind !== 'police' && Math.random() < 0.5) setWanted(Math.max(state.wanted, 1), 'تفجير سيارة');
+  if (byPlayer && state.team === 'crim' && c.mode !== 'chase' && c.kind !== 'police' && Math.random() < 0.5) crime(1, 'تفجير سيارة', c.x, c.z);
 }
 
 // ---------- traffic on the road grid ----------
@@ -247,31 +247,53 @@ function updateIdleCar(c, dt) {
   }
 }
 function carWorldCollide(c) {
-  let hitAny = false; const [fx, fz] = carForward(c);
+  let hitAny = false, side = 0; const [fx, fz] = carForward(c), isP = c.mode === 'player' && c.vx !== undefined;
   for (const off of [1.5, -1.5]) {
     const px = c.x + fx * off, pz = c.z + fz * off, r = resolveCircle(px, pz, 1.25);
-    if (r.hit) { c.x += r.x - px; c.z += r.z - pz; hitAny = true; }
+    if (r.hit) { c.x += r.x - px; c.z += r.z - pz; hitAny = true; side += off; }
   }
   if (hitAny && c.hitCool <= 0) {
-    c.hitCool = 0.3; const v = Math.abs(c.speed);
-    if (v > 9) { damageCar(c, (v - 9) * 2.4, c === P.car); if (c === P.car) sfx.crash(); }
-    c.speed *= -0.3;
+    c.hitCool = 0.3; const v = isP ? Math.hypot(c.vx, c.vz) : Math.abs(c.speed);
+    if (v > 9) { damageCar(c, (v - 9) * 2.4, c === P.car); if (c === P.car) { sfx.crash(); camShake = Math.max(camShake, clamp(v / 30, 0, 1) * 0.7); } }
+    if (isP) { c.vx *= -0.3; c.vz *= -0.3; c.w += Math.sign(side || 1) * Math.min(v, 28) * 0.06 * (Math.random() < 0.5 ? 1 : -1); } else c.speed *= -0.3;
   }
   return hitAny;
 }
 
 function drivePlayerCar(c, dt) {
-  const st = CAR_STATS[c.kind];
-  const thr = (keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0);
-  if (thr > 0) { if (c.speed < 0) c.speed += st.acc * 2.5 * dt; else c.speed += st.acc * (1 - Math.pow(clamp(c.speed / st.max, 0, 1), 2)) * dt; }
-  else if (thr < 0) { if (c.speed > 0.5) c.speed -= st.acc * 2.2 * dt; else c.speed = Math.max(c.speed - st.acc * 0.6 * dt, -st.max * 0.35); }
-  else c.speed -= Math.sign(c.speed) * Math.min(Math.abs(c.speed), (3 + Math.abs(c.speed) * 0.12) * dt);
-  if (keys.Space) c.speed -= Math.sign(c.speed) * Math.min(Math.abs(c.speed), 32 * dt);
-  const steer = (keys.KeyA ? 1 : 0) - (keys.KeyD ? 1 : 0);
-  c.steerVis += (steer * 0.5 - c.steerVis) * Math.min(1, 10 * dt);
-  c.h += steer * dt * 2.2 * clamp(c.speed / 7, -1, 1) * (1 - 0.55 * clamp(Math.abs(c.speed) / st.max, 0, 1)) * (keys.Space ? 1.5 : 1);
-  const [fx, fz] = carForward(c); c.x += fx * c.speed * dt; c.z += fz * c.speed * dt;
-  carWorldCollide(c);
+  const st = CAR_STATS[c.kind], max = st.max * (c.flat ? 0.45 : 1);
+  if (c.vx === undefined) { c.vx = Math.sin(c.h) * c.speed; c.vz = Math.cos(c.h) * c.speed; c.w = 0; }
+  let fx = Math.sin(c.h), fz = Math.cos(c.h), rx = -Math.cos(c.h), rz = Math.sin(c.h);
+  let vf = c.vx * fx + c.vz * fz;
+  const thr = (keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0), steer = (keys.KeyA ? 1 : 0) - (keys.KeyD ? 1 : 0), hb = !!keys.Space;
+  const dv0 = vf;
+  if (thr > 0) { if (vf < 0) vf += st.acc * 2.5 * dt; else vf += st.acc * (1 - Math.pow(clamp(vf / max, 0, 1), 2)) * dt * (hb ? 0.2 : 1); }
+  else if (thr < 0) { if (vf > 0.5) vf -= st.acc * 2.2 * dt; else vf = Math.max(vf - st.acc * 0.6 * dt, -max * 0.35); }
+  else vf -= Math.sign(vf) * Math.min(Math.abs(vf), (3 + Math.abs(vf) * 0.12) * dt);
+  if (hb) vf -= Math.sign(vf) * Math.min(Math.abs(vf), 12 * dt);
+  c.braking = (thr < 0 && dv0 > 0.5) || hb;
+  c.vx += fx * (vf - dv0); c.vz += fz * (vf - dv0);
+  // steering → yaw rate (smoothed; collision spins decay through the same filter)
+  const tgt = steer * 2.3 * clamp(vf / 7, -1, 1) * (1 - 0.55 * clamp(Math.abs(vf) / max, 0, 1)) * (hb ? 1.6 : 1);
+  c.w += (tgt - c.w) * Math.min(1, 7 * dt); c.h += c.w * dt; c.steerVis += (steer * 0.5 - c.steerVis) * Math.min(1, 10 * dt);
+  fx = Math.sin(c.h); fz = Math.cos(c.h); rx = -Math.cos(c.h); rz = Math.sin(c.h);
+  vf = c.vx * fx + c.vz * fz; let vl = c.vx * rx + c.vz * rz;
+  const grip = (hb ? 1.6 : c.flat ? 2.5 : 6.5 + (c.kind === 'sport' || c.kind === 'super' ? 2 : 0)) ; vl *= Math.exp(-grip * dt);
+  c.slip = Math.abs(vl); c.vx = fx * vf + rx * vl; c.vz = fz * vf + rz * vl;
+  c.x += c.vx * dt; c.z += c.vz * dt; c.speed = vf;
+  carWorldCollide(c); if (c.mode === 'player') c.speed = c.vx * fx + c.vz * fz;
+  // gearbox / rpm for the engine sound
+  const ratio = clamp(Math.abs(c.speed) / max, 0, 1), G = [0, 0.14, 0.3, 0.5, 0.72, 1]; let gi = 1; while (gi < 5 && ratio > G[gi]) gi++;
+  const frac = (ratio - G[gi - 1]) / (G[gi] - G[gi - 1]); if (c.gear !== gi) { c.gear = gi; c.rpm = (c.rpm || 0.3) - 0.25; }
+  c.rpm = lerp(c.rpm ?? 0.3, 0.2 + 0.75 * frac + (thr > 0 && gi === 1 ? 0.1 : 0), Math.min(1, 6 * dt)); c.thr = Math.max(0, thr);
+  // skid marks + tyre smoke
+  const skidding = c.slip > 3.2 || (c.braking && Math.abs(c.speed) > 14 && thr < 0) || (hb && Math.abs(c.speed) > 8);
+  c.skidding = skidding ? clamp(c.slip / 6 + (c.braking ? 0.3 : 0), 0.3, 1) : 0;
+  if (skidding) {
+    const d = Math.hypot(c.x - (c.lsx ?? 1e9), c.z - (c.lsz ?? 1e9));
+    if (d > 0.7) { c.lsx = c.x; c.lsz = c.z; for (const s of [-1, 1]) addSkid(c.x - fx * 1.4 + rx * s * 0.8, c.z - fz * 1.4 + rz * s * 0.8, Math.atan2(c.vx, c.vz)); }
+    if (Math.random() < 0.5) spawnFx(c.x - fx * 1.4 + rx * rnd(-0.8, 0.8), 0.3, c.z - fz * 1.4 + rz * rnd(-0.8, 0.8), rnd(-0.5, 0.5), rnd(0.6, 1.4), rnd(-0.5, 0.5), 0.9, 0.3, 1.3, 0xcfcfcf, 0.35);
+  }
   if (c.kind === 'police' && pressed.KeyX) { c.siren = !c.siren; sfx.click(); }
 }
 
@@ -322,8 +344,9 @@ function separateCars() {
       if (u.mode === 'traffic' || u.mode === 'chase') { u.stun = Math.max(u.stun, 0.8); u.speed *= 0.5; }
       if (u.mode === 'player') {
         if (impact > 14 && !u.crashSnd) { u.crashSnd = 0.3; sfx.crash(); }
+        if (u.vx !== undefined) { u.vx *= -0.25; u.vz *= -0.25; u.w += rnd(-1, 1) * Math.min(impact, 30) * 0.05; camShake = Math.max(camShake, clamp(impact / 40, 0, 0.7)); }
         u.speed *= -0.2;
-        if (o.mode === 'traffic' && state.team === 'crim' && impact > 12 && Math.random() < 0.3) setWanted(Math.max(state.wanted, 1), 'تصادم!');
+        if (o.mode === 'traffic' && state.team === 'crim' && impact > 12 && Math.random() < 0.3) crime(1, 'تصادم!', u.x, u.z);
       }
     }
   }

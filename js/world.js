@@ -138,7 +138,7 @@ function buildPrison(i, j) {
   // cell block
   W(-16, -24.4, 16, -23.6, 4.5); W(-16, -10.4, -3, -9.6, 4.5); W(3, -10.4, 16, -9.6, 4.5); W(-16.4, -24, -15.6, -10, 4.5); W(15.6, -24, 16.4, -10, 4.5);
   for (const x of [-8, 0, 8]) W(x - 0.3, -24, x + 0.3, -17, 4.5, lam(0x9c9c98));
-  const roof = new THREE.Mesh(new THREE.BoxGeometry(33.4, 0.4, 15.4), lam(0x4b4c52)); roof.position.set(px, 5.1, pz - 17); roof.castShadow = true; scene.add(roof);
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(33.4, 0.4, 15.4), lam(0x4b4c52)); roof.position.set(px, 5.1, pz - 17); scene.add(roof); pr.roof = roof;
   for (const cx of [-12, -4, 4, 12]) {
     const bunk = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.9, 3.2), lam(0x4a5a7a)); bunk.position.set(px + cx - 2.6, 0.8, pz - 21.5); scene.add(bunk);
     const pill = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.2, 0.6), lam(0xe8e8e0)); pill.position.set(px + cx - 2.6, 1.35, pz - 22.6); scene.add(pill);
@@ -170,6 +170,51 @@ function buildPrison(i, j) {
   return pr;
 }
 
+
+// ---------- bank with a real interior and vault ----------
+let bank = null;
+function buildBank(i, j) {
+  const bx = bc(i), bz = bc(j), cz = bz - 6, front = cz + 17, back = cz - 17, H = 12, ci = 6;
+  const wall = (x0, z0, x1, z1, h = H) => addBuilding((x0 + x1) / 2, (z0 + z1) / 2, x1 - x0, z1 - z0, h, ci, '#f4efe2');
+  wall(bx - 22, back, bx + 22, back + 0.8); wall(bx - 22, back, bx - 21.2, front); wall(bx + 21.2, back, bx + 22, front);
+  wall(bx - 22, front - 0.8, bx - 3, front); wall(bx + 3, front - 0.8, bx + 22, front);
+  const lintel = new THREE.Mesh(new THREE.BoxGeometry(6, H - 4.6, 0.8), lam(0xd9d3c4)); lintel.position.set(bx, 4.6 + (H - 4.6) / 2 + 0.3, front - 0.4); scene.add(lintel);
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(44.4, 0.5, 34.4), lam(0x6a6e75)); roof.position.set(bx, H + 0.55, cz); scene.add(roof);
+  // marble floor
+  const fc = document.createElement('canvas'); fc.width = fc.height = 128; const fg = fc.getContext('2d');
+  for (let a = 0; a < 4; a++) for (let b = 0; b < 4; b++) { fg.fillStyle = (a + b) % 2 ? '#d8d4cc' : '#aaa59b'; fg.fillRect(a * 32, b * 32, 32, 32); }
+  const ft = new THREE.CanvasTexture(fc); ft.wrapS = ft.wrapT = THREE.RepeatWrapping; ft.repeat.set(11, 8.5); ft.anisotropy = 8;
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(43, 33).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ map: ft })); floor.position.set(bx, 0.32, cz); floor.receiveShadow = true; scene.add(floor);
+  // counter + glass
+  const cnt = new THREE.Mesh(new THREE.BoxGeometry(26, 1.1, 1.6), lam(0x5a3b24)); cnt.position.set(bx, 0.85, cz + 3); cnt.castShadow = true; scene.add(cnt); addCollider(bx - 13, bx + 13, cz + 2.2, cz + 3.8, 1.4);
+  const top = new THREE.Mesh(new THREE.BoxGeometry(26.2, 0.08, 1.8), lam(0xd9d2c4)); top.position.set(bx, 1.43, cz + 3); scene.add(top);
+  const glass = new THREE.Mesh(new THREE.BoxGeometry(26, 1.1, 0.05), new THREE.MeshPhongMaterial({ color: 0x9fc4d8, transparent: true, opacity: 0.25, shininess: 90 })); glass.position.set(bx, 2.1, cz + 3); scene.add(glass);
+  // vault wall + steel door
+  wall(bx - 22, cz - 9.4, bx - 2.5, cz - 8.6); wall(bx + 2.5, cz - 9.4, bx + 22, cz - 8.6);
+  const door = new THREE.Group(); const slab = new THREE.Mesh(new THREE.BoxGeometry(5, 4.4, 0.6), new THREE.MeshPhongMaterial({ color: 0x8a9099, shininess: 80 })); slab.castShadow = true; door.add(slab);
+  const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.7, 0.08, 6, 16), lam(0xcfa04a)); wheel.position.z = 0.35; door.add(wheel);
+  for (let k = 0; k < 4; k++) { const sp = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.07, 0.07), lam(0xcfa04a)); sp.position.z = 0.35; sp.rotation.z = k * Math.PI / 4; door.add(sp); }
+  door.position.set(bx, 2.5, cz - 9); scene.add(door);
+  const vault = { door, col: addCollider(bx - 2.5, bx + 2.5, cz - 9.3, cz - 8.7, 4.7), open: false };
+  // cash piles + deposit boxes inside the vault
+  const piles = [];
+  const cashG = new THREE.BoxGeometry(1.1, 0.55, 0.7), cashM = new THREE.MeshLambertMaterial({ color: 0x3f8f4a }), goldM = new THREE.MeshPhongMaterial({ color: 0xe0b030, shininess: 90 });
+  for (let k = 0; k < 8; k++) {
+    const x = bx - 14 + k * 4, z = cz - 14, m = new THREE.Mesh(cashG, k % 3 === 0 ? goldM : cashM); m.position.set(x, 0.6, z); m.castShadow = true; scene.add(m);
+    piles.push({ mesh: m, x, z, taken: false, value: rint(450, 950) });
+  }
+  const boxG = new THREE.BoxGeometry(6, 2.4, 0.5);
+  for (const sx of [-1, 1]) { const m = new THREE.Mesh(boxG, lam(0x6d7680)); m.position.set(bx + sx * 12, 1.5, back + 1.2); scene.add(m); }
+  // security cameras, benches, plants, ATMs
+  const cams = [];
+  for (const [x, z] of [[bx - 20.5, front - 2], [bx + 20.5, front - 2], [bx, cz - 8]]) { const c = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.3, 0.7), lam(0x222222)); c.position.set(x, H - 1.2, z); scene.add(c); const led = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.12), new THREE.MeshBasicMaterial({ color: 0xff2020 })); led.position.set(x, H - 1.2, z + 0.4); scene.add(led); cams.push(led); }
+  for (const x of [-12, 12]) { const b = new THREE.Mesh(new THREE.BoxGeometry(4, 0.5, 1), lam(0x3a4a66)); b.position.set(bx + x, 0.6, cz + 10); scene.add(b); addCollider(bx + x - 2, bx + x + 2, cz + 9.5, cz + 10.5, 0.9); }
+  for (const x of [-19, 19]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.3, 0.8, 8), lam(0x8a4a2a)); p.position.set(bx + x, 0.7, front - 3); scene.add(p); const l = new THREE.Mesh(new THREE.SphereGeometry(0.8, 8, 6), lam(0x2f7a35)); l.position.set(bx + x, 1.8, front - 3); scene.add(l); }
+  addSign('BANK | بنك', '#3a2a08', '#ffd23f', bx, 8.4, front + 0.1, 20);
+  bank = { x: bx, z: cz, front, back, roof, vault, piles, cams, spotX: bx, spotZ: cz - 5.6, exitX: bx, exitZ: front + 9, inside: (x, z) => Math.abs(x - bx) < 22 && z > back && z < front };
+  specials.bank = { i, j, x: bx, z: bz, front, doorZ: front + 6 };
+}
+
 // ---------- city ----------
 const specialDefs = {
   police: { at: [4, 5], o: { w: 44, d: 30, h: 16, ci: 5, tint: '#c9d6ff', title: 'POLICE | شرطة', bg: '#10306b', fg: '#ffffff' } },
@@ -199,7 +244,8 @@ function buildCity() {
   const Ltot = N * S + R, tex = roadTexture();
   for (let k = 0; k <= N; k++) for (const axis of ['x', 'z']) {
     const t = tex.clone(); t.needsUpdate = true; t.repeat.set(1, Ltot / 16);
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(R, Ltot).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ map: t }));
+    const rm = new THREE.MeshPhongMaterial({ map: t, specular: 0x111111, shininess: 20 }); env.roadMats.push(rm);
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(R, Ltot).rotateX(-Math.PI / 2), rm);
     m.receiveShadow = true;
     if (axis === 'z') m.position.set(rc(k), 0.02, 0); else { m.rotation.y = Math.PI / 2; m.position.set(0, 0.02, rc(k)); }
     scene.add(m);
@@ -258,7 +304,8 @@ function buildCity() {
     }
   }
 
-  for (const [k, v] of Object.entries(specialDefs)) addSpecial(k, v.at[0], v.at[1], v.o);
+  for (const [k, v] of Object.entries(specialDefs)) if (k !== 'bank') addSpecial(k, v.at[0], v.at[1], v.o);
+  buildBank(specialDefs.bank.at[0], specialDefs.bank.at[1]);
   prison = buildPrison(PRISON_AT[0], PRISON_AT[1]);
   specials.prison = { x: prison.x, z: prison.z, doorZ: prison.z + 30 };
   const pSign = signTexture('PRISON | سجن', '#222', '#ff9d2e'); const ps = new THREE.Mesh(new THREE.PlaneGeometry(16, 4), new THREE.MeshBasicMaterial({ map: pSign })); ps.position.set(prison.x, 7, prison.z + 29.3); scene.add(ps);
@@ -271,7 +318,7 @@ function buildCity() {
     { key: 'market', name: 'السوبرماركت', reward: [900, 1700], time: 7, wanted: 2 },
     { key: 'gas', name: 'محطة الوقود', reward: [600, 1200], time: 5, wanted: 2 }
   ];
-  for (const d of defs) { const s = specials[d.key]; spots.push({ ...d, x: s.x, z: s.doorZ, cd: 0, marker: placeMarker(0xffd23f, s.x, s.doorZ) }); }
+  for (const d of defs) { const s = specials[d.key], isB = d.key === 'bank', sx = isB ? bank.spotX : s.x, sz = isB ? bank.spotZ : s.doorZ; spots.push({ ...d, x: sx, z: sz, ex: isB ? bank.exitX : undefined, ez: isB ? bank.exitZ : undefined, cd: 0, marker: placeMarker(0xffd23f, sx, sz) }); }
   specials.dealer.sx = specials.dealer.x; specials.dealer.sz = specials.dealer.doorZ; specials.dealer.marker = placeMarker(0x4dff9a, specials.dealer.sx, specials.dealer.sz);
   specials.hideout.marker = placeMarker(0xff6a6a, specials.hideout.x, specials.hideout.doorZ); specials.hideout.sx = specials.hideout.x; specials.hideout.sz = specials.hideout.doorZ;
   specials.police.marker = placeMarker(0x4da3ff, specials.police.x, specials.police.doorZ); specials.police.sx = specials.police.x; specials.police.sz = specials.police.doorZ;
