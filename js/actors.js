@@ -3,27 +3,67 @@
 
 // ---------- humans ----------
 const humanGeoCache = new Map();
-function makeHuman(shirt, pants, skin, hat, gun) {
-  const key = [shirt, pants, skin, hat, gun].join('|');
-  let G = humanGeoCache.get(key);
-  if (!G) {
-    const body = [bp(0.7, 0.85, 0.4, 0, 1.35, 0, shirt), bp(0.42, 0.42, 0.42, 0, 1.98, 0, skin)]; if (hat) body.push(bp(0.5, 0.16, 0.5, 0, 2.25, 0, hat));
-    const armR = [bp(0.25, 0.8, 0.25, 0, -0.4, 0, shirt)]; if (gun) armR.push(bp(0.1, 0.14, 0.4, 0, -0.8, 0.22, 0x111111));
-    G = { body: mergeParts(body), leg: mergeParts([bp(0.3, 0.9, 0.3, 0, -0.45, 0, pants)]), armL: mergeParts([bp(0.25, 0.8, 0.25, 0, -0.4, 0, shirt)]), armR: mergeParts(armR) };
-    humanGeoCache.set(key, G);
+const HAIR = [0x1b1b1b, 0x3b2a1a, 0x7a5530, 0xc9a14a, 0x777777];
+function shade(c, f) { const k = new THREE.Color(c); k.multiplyScalar(f); return k.getHex(); }
+function buildHumanGeos(style, shirt, pants, skin, hatC, gun, v) {
+  const hairC = HAIR[v % 5], longSleeve = style !== 'civ' || v % 2 === 0;
+  const shoeC = style === 'civ' ? [0x222222, 0x5a3a22, 0xeeeeee][v % 3] : 0x111111;
+  const sleeveFore = longSleeve ? shirt : skin, hand = style === 'crook' ? 0x111111 : skin;
+  const T = [
+    cyl(0.19, 0.165, 0.48, 0, 0.27, 0, shirt, 1, 0.62, 10), cyl(0.17, 0.17, 0.2, 0, 0.0, 0, pants, 1, 0.68, 10),
+    sph(0.066, -0.2, 0.5, 0, shirt), sph(0.066, 0.2, 0.5, 0, shirt), cyl(0.05, 0.056, 0.1, 0, 0.6, 0, skin),
+    sph(0.115, 0, 0.745, 0, skin, 1, 1.15, 1.05, 10), sph(0.025, -0.118, 0.74, 0, skin), sph(0.025, 0.118, 0.74, 0, skin),
+    sph(0.014, -0.042, 0.765, 0.108, 0x111111, 1, 1, 1, 6), sph(0.014, 0.042, 0.765, 0.108, 0x111111, 1, 1, 1, 6),
+    bxp(0.02, 0.03, 0.025, 0, 0.735, 0.123, shade(skin, 0.88)), bxp(0.045, 0.008, 0.01, 0, 0.695, 0.11, 0x7a3a3a)
+  ];
+  const cap = (col, visor) => { T.push(sph(0.126, 0, 0.785, -0.004, col, 1, 0.72, 1.06, 10), bxp(0.2, 0.012, 0.11, 0, 0.757, 0.15, visor ?? col)); };
+  if (style === 'cop') {
+    cap(hatC || 0x0e1b44, 0x080808); T.push(bxp(0.05, 0.055, 0.012, 0.075, 0.42, 0.12, 0xd4af37), bxp(0.034, 0.2, 0.01, 0, 0.3, 0.121, 0x111111), cyl(0.172, 0.172, 0.05, 0, 0.1, 0, 0x111111, 1, 0.68, 10),
+      bxp(0.07, 0.15, 0.1, 0.19, 0.0, 0.02, 0x111111), bxp(0.045, 0.07, 0.03, -0.17, 0.5, 0.08, 0x222222), bxp(0.13, 0.034, 0.02, 0, 0.77, 0.112, 0x0a0a0a));
+  } else if (style === 'guard') {
+    cap(hatC || 0x232b22, 0x111111); T.push(cyl(0.172, 0.172, 0.05, 0, 0.1, 0, 0x111111, 1, 0.68, 10), bxp(0.05, 0.055, 0.012, 0.075, 0.42, 0.12, 0xb0b0b0), bxp(0.06, 0.1, 0.05, -0.19, 0.02, 0, 0x888888));
+  } else if (style === 'crook') {
+    T.push(sph(0.123, 0, 0.745, 0, 0x111111, 1, 1.15, 1.06, 10), bxp(0.13, 0.034, 0.02, 0, 0.767, 0.116, skin), sph(0.014, -0.042, 0.767, 0.12, 0xffffff, 1, 1, 1, 6), sph(0.014, 0.042, 0.767, 0.12, 0xffffff, 1, 1, 1, 6));
+  } else if (style === 'thug') {
+    cap(hatC || 0x8b0000, 0x6b0000); T.push(sph(0.1, 0, 0.55, -0.12, shirt, 1, 0.9, 0.9)); // hood
+  } else if (style === 'prisoner') {
+    T.push(sph(0.122, 0, 0.78, -0.01, 0x2b2b2b, 1, 0.8, 1.04, 10), bxp(0.12, 0.08, 0.01, 0, 0.35, 0.121, 0xffffff), bxp(0.08, 0.03, 0.012, 0, 0.35, 0.123, 0x111111));
+  } else {
+    const hs = v % 4;
+    if (hs === 0 || hs === 1) T.push(sph(0.122, 0, 0.778, -0.012, hairC, 1, 0.85, 1.06, 10));
+    if (hs === 1) T.push(sph(0.12, 0, 0.69, -0.06, hairC, 1, 1.5, 0.72, 10));
+    if (hs === 3) cap(pick([0x2a6bd6, 0xc0392b, 0x222222, 0xf1c40f]), undefined);
   }
+  const armL = [cyl(0.052, 0.044, 0.34, 0, -0.17, 0, shirt, 1, 1, 8), cyl(0.044, 0.037, 0.27, 0, -0.43, 0, sleeveFore, 1, 1, 8), sph(0.042, 0, -0.59, 0, hand, 1, 1, 1, 7)];
+  const armR = [armL[0], armL[1], armL[2]];
+  if (gun) armR.push(bxp(0.032, 0.2, 0.05, 0, -0.71, 0.0, 0x151515), bxp(0.03, 0.1, 0.04, 0, -0.64, -0.055, 0x151515));
+  const legU = [cyl(0.095, 0.078, 0.46, 0, -0.23, 0, pants, 1, 1, 8)];
+  const legD = [cyl(0.072, 0.056, 0.4, 0, -0.2, 0, pants, 1, 1, 8), bxp(0.115, 0.075, 0.27, 0, -0.41, 0.06, shoeC)];
+  return { torso: mergeParts(T), armL: mergeParts(armL), armR: mergeParts(armR), legU: mergeParts(legU), legD: mergeParts(legD) };
+}
+function makeHuman(shirt, pants, skin, hat, gun, style = 'civ') {
+  const v = rint(0, 5), key = [style, shirt, pants, skin, hat, gun, v].join('|');
+  let G = humanGeoCache.get(key); if (!G) { G = buildHumanGeos(style, shirt, pants, skin, hat, !!gun, v); humanGeoCache.set(key, G); }
   const g = new THREE.Group();
-  const add = (geo, x, y) => { const pv = new THREE.Group(); pv.position.set(x, y, 0); const m = new THREE.Mesh(geo, vcMat); m.castShadow = true; pv.add(m); g.add(pv); return pv; };
-  const bm = new THREE.Mesh(G.body, vcMat); bm.castShadow = true; g.add(bm);
-  const legL = add(G.leg, -0.19, 0.92), legR = add(G.leg, 0.19, 0.92), armL = add(G.armL, -0.5, 1.72), armRp = add(G.armR, 0.5, 1.72);
-  return { group: g, parts: { legL, legR, armL, armR: armRp }, hit: [] };
+  const mesh = geo => { const m = new THREE.Mesh(geo, vcMat); m.castShadow = true; return m; };
+  const torso = new THREE.Group(); torso.position.y = 0.92; torso.add(mesh(G.torso)); g.add(torso);
+  const armL = new THREE.Group(), armR = new THREE.Group(); armL.position.set(-0.235, 0.5, 0); armR.position.set(0.235, 0.5, 0);
+  armL.add(mesh(G.armL)); armR.add(mesh(G.armR)); torso.add(armL, armR);
+  const leg = (x) => { const hip = new THREE.Group(); hip.position.set(x, 0.92, 0); hip.add(mesh(G.legU)); const knee = new THREE.Group(); knee.position.y = -0.46; knee.add(mesh(G.legD)); hip.add(knee); g.add(hip); return [hip, knee]; };
+  const [legL, kneeL] = leg(-0.1), [legR, kneeR] = leg(0.1);
+  g.add(makeBlob(1.1, 1.1));
+  return { group: g, parts: { legL, legR, kneeL, kneeR, armL, armR, torso }, hit: [] };
 }
 function animHuman(e, speed, dt, aim) {
-  e.phase += dt * speed * 1.7;
-  const sw = Math.sin(e.phase) * Math.min(1, speed / 5) * 0.9, p = e.parts;
-  p.legL.rotation.x = sw; p.legR.rotation.x = -sw; p.armL.rotation.x = -sw * 0.8;
-  p.armR.rotation.x = aim ? -1.5 : sw * 0.8;
-  if (e.up) p.armL.rotation.x = p.armR.rotation.x = Math.PI;
+  const p = e.parts; e.phase += dt * speed * 1.5;
+  const k = Math.min(1, speed / 5), run = clamp((speed - 5.5) / 4, 0, 1), sw = Math.sin(e.phase) * k * (0.7 + 0.4 * run);
+  p.legL.rotation.x = sw; p.legR.rotation.x = -sw;
+  p.kneeL.rotation.x = Math.max(0, -sw) * (1.0 + run * 0.9); p.kneeR.rotation.x = Math.max(0, sw) * (1.0 + run * 0.9);
+  p.torso.position.y = 0.92 + Math.abs(Math.cos(e.phase)) * 0.035 * k; p.torso.rotation.x = 0.04 * k + 0.14 * run;
+  p.armL.rotation.z = p.armR.rotation.z = 0;
+  if (e.up) { p.armL.rotation.x = p.armR.rotation.x = -2.9; p.armL.rotation.z = -0.25; p.armR.rotation.z = 0.25; }
+  else if (aim) { p.armR.rotation.x = -1.5; p.armL.rotation.x = -1.35; p.armL.rotation.z = 0.12; }
+  else { p.armL.rotation.x = -sw * 1.0; p.armR.rotation.x = sw * 1.0; }
 }
 
 // ---------- cars ----------
@@ -35,34 +75,61 @@ const cars = [];
 const CAR_COLORS = [0xc0392b, 0x2e86de, 0x27ae60, 0xf1c40f, 0x7f8c8d, 0x34495e, 0xe67e22, 0x8e44ad, 0xecf0f1, 0x1a1a1a];
 const burntMat = new THREE.MeshLambertMaterial({ color: 0x151515 });
 
-const wheelGeo = mergeParts([{ g: new THREE.CylinderGeometry(0.43, 0.43, 0.32, 14).rotateZ(Math.PI / 2), m: new THREE.Matrix4(), c: 0x111111 }, bp(0.36, 0.5, 0.12, 0, 0, 0, 0xbbbbbb)]);
+const wheelGeo = mergeParts([cyl(0.39, 0.39, 0.26, 0, 0, 0, 0x151515, 1, 1, 16, 0, Math.PI / 2), cyl(0.25, 0.25, 0.28, 0, 0, 0, 0xcfcfcf, 1, 1, 12, 0, Math.PI / 2), cyl(0.07, 0.07, 0.3, 0, 0, 0, 0x333333, 1, 1, 8, 0, Math.PI / 2), bxp(0.28, 0.5, 0.06, 0, 0, 0, 0x9a9a9a)]);
+const PROFILES = {
+  sedan: { L: 4.5, wid: 1.85, body: [[0, .42], [1, .42], [1, .80], [.96, .92], [.64, .98], [.52, 1.42], [.2, 1.44], [.08, 1.0], [0, .95]], glass: [[[.60, 1.0], [.51, 1.38], [.37, 1.40], [.37, 1.0]], [[.32, 1.0], [.32, 1.40], [.21, 1.40], [.11, 1.02]]], belt: 1.0 },
+  sport: { L: 4.4, wid: 1.9, body: [[0, .38], [1, .38], [1, .62], [.9, .75], [.66, .82], [.5, 1.18], [.32, 1.22], [.1, .95], [0, .9]], glass: [[[.62, .84], [.52, 1.14], [.40, 1.17], [.40, .84]], [[.36, .84], [.34, 1.16], [.2, 1.0], [.2, .86]]], belt: 0.84 },
+  super: { L: 4.6, wid: 2.0, body: [[0, .35], [1, .35], [1, .52], [.88, .66], [.6, .74], [.46, 1.08], [.28, 1.1], [.05, .8], [0, .75]], glass: [[[.58, .76], [.47, 1.04], [.34, 1.07], [.34, .76]], [[.30, .76], [.28, 1.06], [.12, .84], [.14, .78]]], belt: 0.76 },
+  truck: { L: 5.4, wid: 2.0, body: [[0, .55], [1, .55], [1, 1.0], [.93, 1.12], [.66, 1.15], [.56, 1.65], [.34, 1.67], [.32, 1.18], [0, 1.18]], glass: [[[.62, 1.2], [.55, 1.6], [.38, 1.62], [.38, 1.2]]], belt: 1.18 }
+};
+const PROF_OF = { sedan: 'sedan', taxi: 'sedan', police: 'sedan', muscle: 'sedan', sport: 'sport', super: 'super', truck: 'truck' };
+const polyCache = new Map();
+function extrudePoly(pts, L, depth, bevel) {
+  const sh = new THREE.Shape(); pts.forEach(([u, y], i) => { const z = (u - 0.5) * L; if (i) sh.lineTo(z, y); else sh.moveTo(z, y); });
+  const g = new THREE.ExtrudeGeometry(sh, bevel ? { depth, bevelEnabled: true, bevelThickness: 0.08, bevelSize: 0.07, bevelSegments: 2, curveSegments: 1 } : { depth, bevelEnabled: false, curveSegments: 1 });
+  g.rotateY(-Math.PI / 2); g.translate(depth / 2, 0, 0); return g;
+}
+function cachedPoly(key, pts, L, depth, bevel) { let g = polyCache.get(key); if (!g) { g = extrudePoly(pts, L, depth, bevel); polyCache.set(key, g); } return g; }
+
 function makeCarMesh(kind, color) {
   const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
-  const len = { truck: 5.6, muscle: 4.8, super: 4.5, sport: 4.3 }[kind] || 4.4;
-  const low = kind === 'super' ? 0.55 : kind === 'sport' ? 0.65 : 0.75, wid = kind === 'super' ? 2.1 : 2;
-  const bodyC = kind === 'police' ? 0xf4f4f4 : kind === 'taxi' ? 0xf5c518 : color;
-  const cabLen = kind === 'super' ? 1.6 : kind === 'sport' ? 1.8 : kind === 'truck' ? 1.6 : 2.4, cabZ = kind === 'truck' ? 1.4 : -0.2, cabY = 0.5 + low + 0.3;
-  const parts = [bp(wid, low, len, 0, 0.5 + low / 2, 0, bodyC), bp(wid - 0.16, 0.6, cabLen, 0, cabY, cabZ, 0x172431), bp(wid - 0.2, 0.1, cabLen - 0.1, 0, cabY + 0.33, cabZ, bodyC)];
-  if (kind === 'truck') parts.push(bp(2.05, 1.5, 3.0, 0, 1.7, -1.2, 0xd9d9d9));
-  if (kind === 'super' || kind === 'sport') parts.push(bp(wid - 0.2, 0.08, 0.5, 0, cabY + 0.2, -len / 2 + 0.2, 0x111111));
-  if (kind === 'police') parts.push(bp(2.02, 0.3, 1.2, 0, 0.82, 0.9, 0x111111), bp(2.02, 0.3, 1.2, 0, 0.82, -1.2, 0x111111));
-  if (kind === 'taxi') parts.push(bp(0.6, 0.2, 0.3, 0, 1.96, cabZ, 0xffffaa));
-  for (const sx of [-0.7, 0.7]) parts.push(bp(0.4, 0.2, 0.08, sx, 0.5 + low * 0.7, len / 2, 0xfff4c8), bp(0.4, 0.2, 0.08, sx, 0.5 + low * 0.7, -len / 2, 0xc01010));
-  const bm = new THREE.Mesh(mergeParts(parts), vcMat); bm.castShadow = true; body.add(bm);
+  const pk = PROF_OF[kind], pr = PROFILES[pk], L = kind === 'muscle' ? 4.8 : pr.L, wid = kind === 'muscle' ? 1.95 : pr.wid;
+  const bodyC = kind === 'police' ? 0xf2f2f2 : kind === 'taxi' ? 0xf5c518 : color, glassC = 0x0f1a26;
+  const parts = [{ g: cachedPoly(kind + 'b', pr.body, L, wid - 0.16, true), m: new THREE.Matrix4(), c: bodyC }];
+  pr.glass.forEach((poly, i) => parts.push({ g: cachedPoly(kind + 'g' + i, poly, L, wid + 0.04, false), m: new THREE.Matrix4(), c: glassC }));
+  const hw = wid / 2, front = L / 2, low = pr.body[0][1];
+  parts.push(bxp(wid + 0.04, 0.22, 0.28, 0, low + 0.12, front - 0.05, 0x2a2a2a), bxp(wid + 0.04, 0.22, 0.28, 0, low + 0.12, -front + 0.05, 0x2a2a2a),
+    bxp(wid * 0.55, 0.14, 0.04, 0, low + 0.32, front + 0.03, 0x111111),
+    bxp(0.42, 0.13, 0.08, -hw * 0.68, low + 0.38, front - 0.02, 0xfff4c8), bxp(0.42, 0.13, 0.08, hw * 0.68, low + 0.38, front - 0.02, 0xfff4c8),
+    bxp(0.4, 0.12, 0.07, -hw * 0.68, low + 0.4, -front + 0.02, 0xc01010), bxp(0.4, 0.12, 0.07, hw * 0.68, low + 0.4, -front + 0.02, 0xc01010),
+    bxp(0.42, 0.12, 0.02, 0, low + 0.14, front + 0.1, 0xf4f4f4), bxp(0.42, 0.12, 0.02, 0, low + 0.14, -front - 0.1, 0xf4f4f4),
+    bxp(0.1, 0.07, 0.14, -hw - 0.07, pr.belt + 0.02, (0.6 - 0.5) * L, shade(bodyC, 0.7)), bxp(0.1, 0.07, 0.14, hw + 0.07, pr.belt + 0.02, (0.6 - 0.5) * L, shade(bodyC, 0.7)));
+  for (const sx of [-1, 1]) for (const u of [0.36, 0.63]) parts.push(bxp(0.014, pr.belt - low - 0.14, 0.014, sx * (hw + 0.004), (low + pr.belt) / 2 + 0.02, (u - 0.5) * L, shade(bodyC, 0.55)));
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) parts.push(cyl(0.47, 0.47, 0.05, sx * (hw - 0.01), 0.43, sz * L * 0.31, 0x0c0c0c, 1, 1, 14, 0, Math.PI / 2));
+  if (kind === 'sport' || kind === 'super') parts.push(bxp(wid - 0.15, 0.06, 0.45, 0, pr.belt + 0.42, -front + 0.25, 0x111111), bxp(0.06, 0.2, 0.1, -hw * 0.6, pr.belt + 0.3, -front + 0.3, 0x111111), bxp(0.06, 0.2, 0.1, hw * 0.6, pr.belt + 0.3, -front + 0.3, 0x111111));
+  if (kind === 'muscle') parts.push(bxp(0.7, 0.07, 0.9, 0, 1.03, front * 0.45, 0x111111), bxp(0.04, 0.0 + 0.45, L * 0.7, 0, 1.0, 0, 0x1a1a1a)); // hood scoop + stripe
+  if (kind === 'truck') parts.push(bxp(wid - 0.2, 0.05, L * 0.3, 0, 1.2, -front + L * 0.16, 0x222222), bxp(0.1, 0.5, 0.1, -hw + 0.1, 1.4, -front + 0.2, bodyC));
+  if (kind === 'police') {
+    for (const sx of [-1, 1]) parts.push(bxp(0.012, 0.36, 2.1, sx * (hw + 0.006), 0.8, 0.1, 0x1a1a1a), bxp(0.012, 0.1, 1.2, sx * (hw + 0.006), 0.8, 0.1, 0x2050c0));
+    parts.push(bxp(1.3, 0.1, 0.34, 0, 1.46, 0.14, 0x1a1a1a));
+  }
+  if (kind === 'taxi') parts.push(bxp(0.55, 0.18, 0.26, 0, 1.52, 0.14, 0xfff6a0));
+  const bm = new THREE.Mesh(mergeParts(parts), carMat); bm.castShadow = true; bm.receiveShadow = true; body.add(bm);
   const wheels = [];
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
-    const pv = new THREE.Group(); pv.position.set(sx * (wid / 2), 0.43, sz * len * 0.32); g.add(pv);
-    const w = new THREE.Mesh(wheelGeo, vcMat); pv.add(w); wheels.push({ pv, w, front: sz > 0 });
+    const pv = new THREE.Group(); pv.position.set(sx * (hw - 0.05), 0.4, sz * L * 0.31); g.add(pv);
+    const w = new THREE.Mesh(wheelGeo, vcMat); w.castShadow = true; pv.add(w); wheels.push({ pv, w, front: sz > 0 });
   }
   let lights = null;
   if (kind === 'police') {
-    const r = new THREE.MeshBasicMaterial({ color: 0xff2020 }), b = new THREE.MeshBasicMaterial({ color: 0x2060ff }), bg = new THREE.BoxGeometry(0.8, 0.18, 0.4);
-    const m1 = new THREE.Mesh(bg, r); m1.position.set(-0.45, 1.98, cabZ); const m2 = new THREE.Mesh(bg, b); m2.position.set(0.45, 1.98, cabZ); body.add(m1, m2); lights = [r, b];
+    const r = new THREE.MeshBasicMaterial({ color: 0xff2020 }), b = new THREE.MeshBasicMaterial({ color: 0x2060ff }), bg = new THREE.BoxGeometry(0.62, 0.14, 0.3);
+    const m1 = new THREE.Mesh(bg, r); m1.position.set(-0.34, 1.56, 0.14); const m2 = new THREE.Mesh(bg, b); m2.position.set(0.34, 1.56, 0.14); body.add(m1, m2); lights = [r, b];
   }
-  const beamMat = new THREE.MeshBasicMaterial({ color: 0xfff0c0, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
-  const beam = new THREE.Mesh(carBeamGeo, beamMat); beam.position.set(0, 0.9, len / 2); g.add(beam);
+  const beam = new THREE.Mesh(carBeamGeo, new THREE.MeshBasicMaterial({ color: 0xfff0c0, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
+  beam.position.set(0, 0.8, front); g.add(beam);
+  g.add(makeBlob(wid * 1.5, L * 1.25));
   scene.add(g);
-  return { g, body, wheels, lights, beam, len };
+  return { g, body, wheels, lights, beam, len: L };
 }
 const carBeamGeo = new THREE.ConeGeometry(2.4, 12, 12, 1, true).translate(0, -6, 0).rotateX(-Math.PI / 2);
 
@@ -90,7 +157,7 @@ function explodeCar(c, byPlayer) {
   if (c.mode === 'chase' || c.mode === 'traffic') c.mode = 'idle';
   explosionFx(c.x, c.z);
   if (Math.hypot(c.x - P.x, c.z - P.z) < 200) sfx.boom();
-  c.mesh.traverse(m => { if (m.isMesh && m.geometry && m.geometry.type !== 'ConeGeometry') m.material = burntMat; });
+  c.mesh.traverse(m => { if (m.isMesh && (m.material === carMat || m.material === vcMat)) m.material = burntMat; });
   c.beam.visible = false;
   if (P.car === c) { const [rx, rz] = carRight(c); exitCar(); P.x = c.x + rx * 4; P.z = c.z + rz * 4; hurt(55); }
   else if (!P.car && Math.hypot(c.x - P.x, c.z - P.z) < 8) hurt(70 * (1 - Math.hypot(c.x - P.x, c.z - P.z) / 9));
@@ -146,6 +213,7 @@ function updateTraffic(c, dt) {
   const ctrl = c.axis === 'x' ? c.x : c.z, tgtC = rc(c.next), remain = (tgtC - ctrl) * c.dir;
   let target = Math.min(c.cruise, st.max);
   if (remain < 14) target = Math.min(target, 9);
+  if (remain > 9 && remain < 34) { const sg = signalState(c.axis); if (sg === 'r' || (sg === 'y' && remain > 17)) target = Math.min(target, Math.max(0, (remain - 10.5) * 0.8)); }
   if (c.stun > 0) { c.stun -= dt; target = 0; }
   const [fx, fz] = carForward(c), [rx, rz] = carRight(c);
   for (const o of cars) {

@@ -13,18 +13,26 @@ const facadeCache = new Map();
 function facadeMat(ci) {
   const key = ci;
   if (facadeCache.has(key)) return facadeCache.get(key);
-  const mk = () => { const c = document.createElement('canvas'); c.width = c.height = 128; return c; };
+  const S2 = 256, mk = () => { const c = document.createElement('canvas'); c.width = c.height = S2; return c; };
   const a = mk(), e = mk(), g = a.getContext('2d'), h = e.getContext('2d');
-  g.fillStyle = PALETTE[ci]; g.fillRect(0, 0, 128, 128); g.fillStyle = 'rgba(0,0,0,.14)'; g.fillRect(0, 124, 128, 4);
-  h.fillStyle = '#000'; h.fillRect(0, 0, 128, 128);
+  const base = new THREE.Color(PALETTE[ci]);
+  g.fillStyle = PALETTE[ci]; g.fillRect(0, 0, S2, S2);
+  for (let n = 0; n < 900; n++) { g.fillStyle = `rgba(${Math.random() < 0.5 ? '0,0,0' : '255,255,255'},${Math.random() * 0.06})`; g.fillRect(Math.random() * S2, Math.random() * S2, 2 + Math.random() * 6, 1 + Math.random() * 3); }
+  g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(0, S2 - 6, S2, 6); g.fillStyle = 'rgba(255,255,255,.12)'; g.fillRect(0, S2 - 10, S2, 3);
+  h.fillStyle = '#000'; h.fillRect(0, 0, S2, S2);
   for (let r = 0; r < 2; r++) for (let k = 0; k < 4; k++) {
-    const lit = Math.random() < 0.38;
-    g.fillStyle = '#26384d'; g.fillRect(8 + k * 30, 10 + r * 58, 20, 40);
-    g.fillStyle = 'rgba(150,200,255,.35)'; g.fillRect(8 + k * 30, 10 + r * 58, 20, 14);
-    if (lit) { h.fillStyle = pick(['#ffe9a8', '#ffd98a', '#fff4cf', '#bcdcff']); h.fillRect(8 + k * 30, 10 + r * 58, 20, 40); }
+    const x = 16 + k * 60, y = 18 + r * 116, w = 40, hh = 80, lit = Math.random() < 0.4;
+    g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(x - 4, y - 4, w + 8, hh + 8);                 // frame shadow
+    const gr = g.createLinearGradient(0, y, 0, y + hh); gr.addColorStop(0, '#6f93b8'); gr.addColorStop(0.45, '#2b4059'); gr.addColorStop(1, '#17222f');
+    g.fillStyle = gr; g.fillRect(x, y, w, hh);
+    g.fillStyle = 'rgba(255,255,255,.28)'; g.beginPath(); g.moveTo(x, y); g.lineTo(x + w * 0.55, y); g.lineTo(x, y + hh * 0.5); g.fill(); // reflection
+    g.fillStyle = '#d6d6d0'; g.fillRect(x + w / 2 - 1, y, 2, hh); g.fillRect(x, y + hh * 0.5 - 1, w, 2);      // mullions
+    g.fillStyle = '#e7e4dc'; g.fillRect(x - 5, y + hh, w + 10, 5);                                           // sill
+    if (Math.random() < 0.25) { g.fillStyle = '#9aa0a6'; g.fillRect(x + 6, y + hh + 6, 26, 14); g.fillStyle = '#6c7278'; g.fillRect(x + 6, y + hh + 6, 26, 3); } // AC unit
+    if (lit) { h.fillStyle = pick(['#ffe9a8', '#ffd98a', '#fff4cf', '#bcdcff']); h.fillRect(x, y, w, hh); if (Math.random() < 0.5) { g.fillStyle = 'rgba(235,225,200,.55)'; g.fillRect(x, y, w, hh * 0.6); } }
   }
   const t1 = new THREE.CanvasTexture(a), t2 = new THREE.CanvasTexture(e);
-  for (const t of [t1, t2]) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; }
+  for (const t of [t1, t2]) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; }
   const m = new THREE.MeshLambertMaterial({ map: t1, emissiveMap: t2, emissive: 0xffffff, emissiveIntensity: 0 });
   env.facadeMats.push(m); facadeCache.set(key, m); return m;
 }
@@ -284,6 +292,38 @@ function buildCity() {
     });
     bodies.castShadow = roofs.castShadow = true; bodies.receiveShadow = true; scene.add(bodies, roofs);
   }
+  // traffic lights (visual, driven by signalState) + street props
+  const sigHousing = [], sigPos = { x: [], z: [] };
+  for (let a2 = 0; a2 <= N; a2++) for (let b2 = 0; b2 <= N; b2++) for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+    const x = rc(a2) + sx * 10.2, z = rc(b2) + sz * 10.2;
+    if (Math.abs(x) > WORLD - 8 || Math.abs(z) > WORLD - 8) continue;
+    sigPos[sx * sz > 0 ? 'x' : 'z'].push([x - sx * 1.1, z - sz * 1.1]);
+  }
+  const housingGeo = new THREE.BoxGeometry(0.5, 1.5, 0.45), lampGeo = new THREE.BoxGeometry(0.28, 0.28, 0.1), darkM = lam(0x1a1a1a);
+  window.signalMats = {};
+  for (const ax of ['x', 'z']) {
+    const list = sigPos[ax], hs = new THREE.InstancedMesh(housingGeo, darkM, list.length);
+    const lamps = { r: new THREE.InstancedMesh(lampGeo, new THREE.MeshBasicMaterial({ color: 0xff2020 }), list.length), y: new THREE.InstancedMesh(lampGeo, new THREE.MeshBasicMaterial({ color: 0xffc020 }), list.length), g: new THREE.InstancedMesh(lampGeo, new THREE.MeshBasicMaterial({ color: 0x20ff60 }), list.length) };
+    list.forEach(([x, z], k) => {
+      m4.makeTranslation(x, 5.4, z); hs.setMatrixAt(k, m4);
+      const rot = new THREE.Matrix4().makeRotationY(ax === 'x' ? 0 : Math.PI / 2);
+      for (const [key, dy] of [['r', 0.45], ['y', 0], ['g', -0.45]]) { const lm = new THREE.Matrix4().makeTranslation(x, 5.4 + dy, z + 0.24); lamps[key].setMatrixAt(k, lm); }
+    });
+    scene.add(hs, lamps.r, lamps.y, lamps.g); window.signalMats[ax] = { r: lamps.r.material, y: lamps.y.material, g: lamps.g.material };
+  }
+  const hyd = [], bins = [], benches = [];
+  for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+    const bx = bc(i), bz = bc(j);
+    for (let k = 0; k < 4; k++) {
+      const side = k, t = rnd(-20, 20), x = side < 2 ? bx + t : bx + (side === 2 ? 28.5 : -28.5), z = side < 2 ? bz + (side === 0 ? 28.5 : -28.5) : bz + t;
+      (k === 0 ? hyd : k === 1 ? bins : benches).push([x, z, side < 2 ? 0 : Math.PI / 2]);
+    }
+  }
+  const qq = new THREE.Quaternion(), one = new THREE.Vector3(1, 1, 1);
+  const mkInst = (geo, mat, arr, y) => { const im = new THREE.InstancedMesh(geo, mat, arr.length); arr.forEach(([x, z, r], k) => { m4.compose(new THREE.Vector3(x, y, z), qq.setFromAxisAngle(new THREE.Vector3(0, 1, 0), r), one); im.setMatrixAt(k, m4); }); im.castShadow = true; scene.add(im); };
+  mkInst(new THREE.CylinderGeometry(0.16, 0.2, 0.75, 8), lam(0xc0281c), hyd, 0.7);
+  mkInst(new THREE.CylinderGeometry(0.3, 0.26, 0.9, 8), lam(0x4b5560), bins, 0.75);
+  mkInst(new THREE.BoxGeometry(1.8, 0.45, 0.5), lam(0x7a5230), benches, 0.55);
   // instanced trees + lamps + light pools
   const trunks = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.35, 0.45, 3, 6), lam(0x6b4a2b), treePos.length);
   const leaves = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(2.4, 0), lam(0x2f7a35), treePos.length);

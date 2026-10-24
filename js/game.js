@@ -45,8 +45,8 @@ function addXp(n) { const l = level(); state.xp += n; if (level() > l) toast(`�
 // ---------- player ----------
 function buildPlayer(team, uniform) {
   if (P.mesh) scene.remove(P.mesh);
-  const hm = uniform ? makeHuman(0xff7a1a, 0xe56a10, 0xe0b890, null, false)
-    : team === 'cop' ? makeHuman(0x1d3b8b, 0x14213d, 0xf0c8a0, 0x0e1b44, true) : makeHuman(0x222222, 0x3a3a3a, 0xe0b890, 0x8b0000, true);
+  const hm = uniform ? makeHuman(0xff7a1a, 0xe56a10, 0xe0b890, null, false, 'prisoner')
+    : team === 'cop' ? makeHuman(0x24408f, 0x141c33, 0xf0c8a0, 0x0e1b44, true, 'cop') : makeHuman(0x2a2a2a, 0x3a3a3a, 0xe0b890, 0x8b0000, true, 'thug');
   P.mesh = hm.group; P.parts = hm.parts; scene.add(P.mesh);
 }
 
@@ -60,27 +60,27 @@ function initHuman(type, hm, x, z) {
   hm.group.position.set(x, 0, z); scene.add(hm.group); return e;
 }
 function spawnPed() {
-  const hm = makeHuman(pick([0xe74c3c, 0x3498db, 0x2ecc71, 0xf39c12, 0x9b59b6, 0xecf0f1, 0x1abc9c]), pick([0x2c3e50, 0x34495e, 0x6b4f3a, 0x555555]), pick([0xf0c8a0, 0xd9a577, 0x8d5a3b, 0xffdbac]));
+  const hm = makeHuman(pick([0xe74c3c, 0x3498db, 0x2ecc71, 0xf39c12, 0x9b59b6, 0xecf0f1, 0x1abc9c]), pick([0x2c3e50, 0x34495e, 0x6b4f3a, 0x555555]), pick([0xf0c8a0, 0xd9a577, 0x8d5a3b, 0xffdbac]), null, false, 'civ');
   const e = initHuman('ped', hm, 0, 0);
   e.ring = { i: rint(0, N - 1), j: rint(0, N - 1), t: rnd(0, RING * 8), dir: Math.random() < 0.5 ? 1 : -1 }; e.walk = rnd(1.4, 2.2); peds.push(e); return e;
 }
 function spawnCop(x, z, patrol) {
-  const hm = makeHuman(0x1d3b8b, 0x14213d, 0xf0c8a0, 0x0e1b44, true);
+  const hm = makeHuman(0x24408f, 0x141c33, 0xf0c8a0, 0x0e1b44, true, 'cop');
   const e = initHuman('cop', hm, x ?? 0, z ?? 0); e.state = patrol ? 'patrol' : 'chase'; e.walk = 2;
   if (patrol) e.ring = { i: rint(0, N - 1), j: rint(0, N - 1), t: rnd(0, RING * 8), dir: Math.random() < 0.5 ? 1 : -1 };
   cops.push(e); return e;
 }
 function spawnCrook() {
-  const s = pick(spots), hm = makeHuman(0xb32020, 0x1e1e1e, 0xe0b890, 0x111111, true);
+  const s = pick(spots), hm = makeHuman(0x3a3a3a, 0x1e1e1e, 0xe0b890, 0x111111, true, 'crook');
   const e = initHuman('crook', hm, s.x + rnd(-6, 6), s.z + rnd(2, 9));
   e.state = 'robbing'; e.t = 26; e.spot = s; e.value = Math.round((s.reward[0] + s.reward[1]) / 4); e.carT = 0;
   const arrow = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.7, 4), new THREE.MeshBasicMaterial({ color: 0xff3030 }));
-  arrow.rotation.x = Math.PI; arrow.position.y = 3.1; e.mesh.add(arrow); e.arrow = arrow; crooks.push(e);
+  arrow.rotation.x = Math.PI; arrow.position.y = 2.5; e.mesh.add(arrow); e.arrow = arrow; crooks.push(e);
   if (state.team === 'cop') { toast(`🚨 سطو مسلح على ${s.name}! تحقق من الخريطة`, 'rgba(180,20,20,.85)'); sfx.tone(700, 0.15, 0.1, 'square'); sfx.tone(900, 0.15, 0.1, 'square', 0.18); }
   return e;
 }
 function spawnGuard(def, route) {
-  const hm = makeHuman(0x3b4a3a, 0x2a3328, 0xf0c8a0, 0x232b22, true);
+  const hm = makeHuman(0x4c5a47, 0x2d3828, 0xf0c8a0, 0x232b22, true, 'guard');
   const e = initHuman('guard', hm, def ? def.x : route[0].x, def ? def.z : route[0].z);
   e.tower = !!def; e.y = def ? def.y : 0; e.route = route; e.wp = 0; e.walk = 2.1; e.pickT = 0; e.catchT = 0;
   if (e.tower) e.rot = Math.atan2(prison.x - e.x, prison.z - e.z);
@@ -157,7 +157,7 @@ function updateCrooks(dt) {
   for (let i = crooks.length - 1; i >= 0; i--) {
     const e = crooks[i];
     if (e.dead) { e.t -= dt; continue; }
-    if (e.arrow) { e.arrow.position.y = 3.1 + Math.sin(state.time * 5) * 0.15; e.arrow.rotation.y += dt * 3; }
+    if (e.arrow) { e.arrow.position.y = 2.5 + Math.sin(state.time * 5) * 0.15; e.arrow.rotation.y += dt * 3; }
     if (e.stunT > 0) { e.stunT -= dt; e.speed = 0; e.mesh.rotation.x = -1.2; if (e.stunT <= 0) e.mesh.rotation.x = 0; continue; }
     const dx = e.x - P.x, dz = e.z - P.z, d = Math.hypot(dx, dz);
     if (e.state === 'robbing') {
@@ -281,9 +281,9 @@ function traceShot(ox, oy, oz, dx, dy, dz, w) {
   for (const list of [cops, crooks, peds, guards]) for (const e of list) {
     if (e.dead || e.state === 'arrested' || e.state === 'incar' || Math.abs(e.x - ox) > 150 || Math.abs(e.z - oz) > 150) continue;
     const by = e.y || 0, standing = !(e.stunT > 0);
-    let t = raySphere(ox, oy, oz, dx, dy, dz, e.x, by + (standing ? 2.0 : 0.4), e.z, 0.32);
+    let t = raySphere(ox, oy, oz, dx, dy, dz, e.x, by + (standing ? 1.66 : 0.4), e.z, 0.26);
     if (t !== null && t < best) { best = t; hitE = e; hitC = null; head = standing; continue; }
-    t = raySphere(ox, oy, oz, dx, dy, dz, e.x, by + (standing ? 1.3 : 0.4), e.z, 0.55);
+    t = raySphere(ox, oy, oz, dx, dy, dz, e.x, by + (standing ? 1.15 : 0.4), e.z, 0.5);
     if (t === null) t = raySphere(ox, oy, oz, dx, dy, dz, e.x, by + 0.5, e.z, 0.5);
     if (t !== null && t < best) { best = t; hitE = e; hitC = null; head = false; }
   }
@@ -761,6 +761,7 @@ function update(dt) {
   for (const list of [peds, cops, crooks, guards]) for (let i = list.length - 1; i >= 0; i--) if (list[i].dead && list[i].t <= 0) removeHuman(list[i], list);
   for (let i = tracers.length - 1; i >= 0; i--) { tracers[i].t -= dt; if (tracers[i].t <= 0) { scene.remove(tracers[i].l); tracers.splice(i, 1); } }
   updateFx(dt);
+  if (window.signalMats) for (const ax of ['x', 'z']) { const s = signalState(ax), m = window.signalMats[ax]; m.r.color.setHex(s === 'r' ? 0xff2020 : 0x301010); m.y.color.setHex(s === 'y' ? 0xffc020 : 0x302810); m.g.color.setHex(s === 'g' ? 0x20ff60 : 0x103018); }
 
   state.spawn -= dt;
   if (state.spawn <= 0) {

@@ -22,6 +22,7 @@ const RING = 27;
 const canvas = $('view');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
 renderer.setSize(innerWidth, innerHeight, false);
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.95;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene();
@@ -283,4 +284,21 @@ function mergeParts(parts) {
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
   return geo;
+}
+
+const carMat = new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 70, specular: 0x555555 });
+const _V3 = THREE.Vector3;
+function tf(x, y, z, rx = 0, rz = 0, sx = 1, sy = 1, sz = 1) { return new THREE.Matrix4().compose(new _V3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, 0, rz)), new _V3(sx, sy, sz)); }
+const sph = (r, x, y, z, c, sx = 1, sy = 1, sz = 1, seg = 9) => ({ g: new THREE.SphereGeometry(r, seg, seg - 2), m: tf(x, y, z, 0, 0, sx, sy, sz), c });
+const cyl = (rt, rb, h, x, y, z, c, sx = 1, sz = 1, seg = 9, rx = 0, rz = 0) => ({ g: new THREE.CylinderGeometry(rt, rb, h, seg), m: tf(x, y, z, rx, rz, sx, 1, sz), c });
+const bxp = (w, h, d, x, y, z, c, rx = 0) => ({ g: new THREE.BoxGeometry(w, h, d), m: tf(x, y, z, rx), c });
+const blobTex = (() => { const k = document.createElement('canvas'); k.width = k.height = 64; const g = k.getContext('2d'), r = g.createRadialGradient(32, 32, 2, 32, 32, 31); r.addColorStop(0, 'rgba(0,0,0,.55)'); r.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(k); })();
+const blobMat = new THREE.MeshBasicMaterial({ map: blobTex, transparent: true, depthWrite: false });
+const blobGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+function makeBlob(sx, sz) { const m = new THREE.Mesh(blobGeo, blobMat); m.scale.set(sx, 1, sz); m.position.y = 0.06; m.renderOrder = 1; return m; }
+// global traffic signal cycle (22s): x green 0-9, yellow 9-11 | z green 11-20, yellow 20-22
+function signalState(axis) {
+  const t = (state.time || 0) % 22;
+  if (axis === 'x') return t < 9 ? 'g' : t < 11 ? 'y' : 'r';
+  return t < 11 ? 'r' : t < 20 ? 'g' : 'y';
 }
