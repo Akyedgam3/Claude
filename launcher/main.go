@@ -16,6 +16,8 @@ import (
 	"time"
 )
 
+var version = "1.0.0"
+
 //go:embed all:game
 var gameFiles embed.FS
 

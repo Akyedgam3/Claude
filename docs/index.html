@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mad City 3D — لعبة المدينة المفتوحة</title>
+<meta name="description" content="Mad City 3D: مدينة مفتوحة ضخمة، شرطة ومجرمون ومواطنون، مبانٍ بوظائف حقيقية، سجن وهروب، وظائف وسيارات. حمّل اللعبة مجاناً لويندوز أو العب من المتصفح.">
+<meta property="og:title" content="Mad City 3D"><meta property="og:description" content="مدينة مفتوحة ضخمة — شرطة، مجرمون، ومواطنون. حمّلها الآن مجاناً.">
+<meta property="og:image" content="img/hero-night.jpg"><meta property="og:type" content="website">
+<link rel="icon" href="favicon.png">
+<style>
+:root{--bg:#06090f;--panel:#0d1422;--line:#ffffff17;--gold:#ffd23f;--red:#ff4d5e;--blue:#4da3ff;--green:#4dff9a;--txt:#e9eef7}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--txt);font-family:"Segoe UI",system-ui,Tahoma,Arial,sans-serif;line-height:1.8;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+.wrap{width:min(1180px,92vw);margin:auto}
+nav{position:fixed;inset:0 0 auto 0;z-index:50;backdrop-filter:blur(14px);background:#06090fcc;border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;gap:22px;height:64px}
+nav img{width:38px;height:38px;border-radius:10px}
+nav b{font-size:20px;letter-spacing:.5px}nav b span{color:var(--gold)}
+nav .links{display:flex;gap:22px;margin-inline-start:auto;font-size:15px;opacity:.85}
+nav .links a:hover{color:var(--gold)}
+.btn{display:inline-flex;align-items:center;gap:10px;border-radius:14px;padding:14px 30px;font-weight:800;font-size:17px;border:0;cursor:pointer;transition:.2s}
+.btn.pri{background:linear-gradient(135deg,#ffd23f,#ff9d2e);color:#171100;box-shadow:0 10px 36px #ffb02e55}
+.btn.pri:hover{transform:translateY(-3px);box-shadow:0 16px 46px #ffb02e77}
+.btn.sec{background:#ffffff14;border:1px solid #ffffff30}.btn.sec:hover{background:#ffffff24;transform:translateY(-3px)}
+.btn.sm{padding:9px 20px;font-size:14px}
+.hero{padding-bottom:120px;min-height:100vh;position:relative;display:grid;align-items:center;padding-top:90px;isolation:isolate}
+.hero:before{content:"";position:absolute;inset:0;background:url(img/hero-night.jpg) center/cover;z-index:-2;transform:scale(1.04);animation:kb 24s ease-in-out infinite alternate}
+.hero:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#06090f55 0%,#06090fcc 62%,var(--bg) 100%),radial-gradient(circle at 80% 30%,#ff4d5e33,transparent 50%);z-index:-1}
+@keyframes kb{to{transform:scale(1.14) translateX(-2%)}}
+.badge{display:inline-block;padding:6px 16px;border-radius:30px;background:#ffffff14;border:1px solid #ffffff30;font-size:14px;margin-bottom:18px}
+h1{font-size:clamp(46px,9vw,112px);line-height:1.05;font-weight:900;letter-spacing:1px;text-shadow:0 6px 0 #b3001b66,0 0 60px #ff2a4a66}
+h1 span{color:var(--gold)}
+.hero p.lead{font-size:clamp(17px,2.2vw,23px);max-width:760px;margin:22px 0 32px;opacity:.92}
+.cta{display:flex;flex-wrap:wrap;gap:14px}
+.meta{margin-top:26px;display:flex;flex-wrap:wrap;gap:22px;font-size:14px;opacity:.75}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px;margin-top:-70px;position:relative;z-index:5}
+.stat{background:linear-gradient(160deg,#101a2d,#0b1220);border:1px solid var(--line);border-radius:18px;padding:22px;text-align:center}
+.stat b{display:block;font-size:40px;color:var(--gold);font-weight:900}.stat span{opacity:.8;font-size:14px}
+section{padding:90px 0}
+h2{font-size:clamp(30px,4.5vw,46px);font-weight:900;margin-bottom:10px}
+h2 em{font-style:normal;color:var(--gold)}
+.sub{opacity:.75;max-width:720px;margin-bottom:38px;font-size:17px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:26px;transition:.25s;position:relative;overflow:hidden}
+.card:hover{transform:translateY(-6px);border-color:#ffd23f66;box-shadow:0 18px 50px #0008}
+.card .ic{font-size:40px;margin-bottom:8px}
+.card h3{font-size:20px;margin-bottom:6px}.card p{opacity:.78;font-size:15px}
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
+.mode{border-radius:24px;padding:32px;border:1px solid var(--line);position:relative;overflow:hidden;min-height:260px}
+.mode.cop{background:linear-gradient(160deg,#0d2a5c,#0a1426)}.mode.crim{background:linear-gradient(160deg,#5c0d1d,#1a0a10)}.mode.cit{background:linear-gradient(160deg,#0d5c3a,#0a1a14)}
+.mode .ic{font-size:60px}.mode h3{font-size:28px;margin:6px 0}.mode ul{margin-top:10px;list-style:none;font-size:15px;opacity:.9}.mode li:before{content:"▸ ";color:var(--gold)}
+.gallery{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+.gallery figure{border-radius:18px;overflow:hidden;position:relative;cursor:zoom-in;border:1px solid var(--line);background:#000}
+.gallery figure img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s}
+.gallery figure:hover img{transform:scale(1.07)}
+.gallery figcaption{position:absolute;inset:auto 0 0 0;padding:34px 16px 12px;background:linear-gradient(transparent,#000c);font-size:14px}
+.g1{grid-column:span 8;aspect-ratio:16/9}.g2{grid-column:span 4}.g3{grid-column:span 4}.g4{grid-column:span 4}.g5{grid-column:span 4}.g6{grid-column:span 6;aspect-ratio:16/9}.g7{grid-column:span 6;aspect-ratio:16/9}
+@media(max-width:800px){.gallery>*{grid-column:span 12!important;aspect-ratio:16/10}nav .links{display:none}}
+table{width:100%;border-collapse:collapse;background:var(--panel);border-radius:18px;overflow:hidden;font-size:15px}
+th,td{padding:13px 16px;text-align:right;border-bottom:1px solid var(--line)}th{background:#ffffff0d;color:var(--gold)}tr:last-child td{border:0}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}.chip{padding:7px 16px;border-radius:30px;background:#ffffff10;border:1px solid var(--line);font-size:14px}
+.keys{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.key{display:flex;gap:14px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 16px;font-size:15px}
+kbd{background:#ffffff1c;border:1px solid #ffffff40;border-bottom-width:3px;border-radius:8px;padding:2px 11px;font-family:Consolas,monospace;font-size:14px;white-space:nowrap}
+details{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin-bottom:10px}
+summary{cursor:pointer;font-weight:700;font-size:17px}details p{margin-top:10px;opacity:.82}
+.dl{background:linear-gradient(135deg,#1a1030,#0b1a33 60%,#2a1018);border:1px solid #ffffff22;border-radius:28px;padding:50px;text-align:center;position:relative;overflow:hidden}
+.dl:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 0,#ffd23f26,transparent 60%)}
+.dl>*{position:relative}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin:30px 0;text-align:right}
+.step{background:#ffffff0d;border-radius:16px;padding:16px 18px;font-size:15px}.step b{color:var(--gold);font-size:22px;display:block}
+footer{border-top:1px solid var(--line);padding:36px 0;opacity:.7;font-size:14px;text-align:center}
+.lb{position:fixed;inset:0;background:#000d;display:none;place-items:center;z-index:100;cursor:zoom-out}.lb.on{display:grid}.lb img{max-width:94vw;max-height:92vh;border-radius:14px}
+.reveal{opacity:0;transform:translateY(28px);transition:.8s}.reveal.in{opacity:1;transform:none}
+</style>
+</head>
+<body>
+<nav><div class="wrap"><img src="img/icon.png" alt=""><b>MAD <span>CITY</span> 3D</b>
+<div class="links"><a href="#modes">اللعب</a><a href="#city">المدينة</a><a href="#life">الحياة</a><a href="#gallery">الصور</a><a href="#controls">التحكم</a><a href="#faq">أسئلة</a></div>
+<a class="btn pri sm" href="#download">⬇ تحميل</a></div></nav>
+
+<header class="hero"><div class="wrap">
+  <span class="badge">🎮 مجانية 100% · تعمل بدون إنترنت · ويندوز والمتصفح</span>
+  <h1>MAD <span>CITY</span><br>3D</h1>
+  <p class="lead">مدينة مفتوحة ضخمة تعيش وتتنفس: كن شرطياً يطارد اللصوص، أو مجرماً يسرق البنوك ويهرب من السجن، أو مواطناً يعمل ويشتري منزلاً ويعيش حياته. <b>كل مبنى فيها له وظيفة حقيقية.</b></p>
+  <div class="cta"><a class="btn pri" href="#download">⬇ تحميل المثبّت (Windows)</a><a class="btn sec" href="play/">▶ العب الآن من المتصفح</a></div>
+  <div class="meta"><span>📦 ملف واحد بحجم ~13 ميغا</span><span>🔒 بدون إعلانات ولا حسابات</span><span>💾 حفظ تلقائي لتقدّمك</span></div>
+</div></header>
+
+<div class="wrap stats reveal">
+  <div class="stat"><b data-n="1.3">0</b><span>كم × كم — حجم المدينة</span></div>
+  <div class="stat"><b data-n="550">0</b><span>مبنى بخدمة حقيقية</span></div>
+  <div class="stat"><b data-n="18">0</b><span>نوع من الخدمات والمتاجر</span></div>
+  <div class="stat"><b data-n="3">0</b><span>أدوار: شرطي · مجرم · مواطن</span></div>
+</div>
+
+<section id="modes"><div class="wrap">
+  <h2 class="reveal">اختر <em>حياتك</em> في المدينة</h2><p class="sub reveal">ثلاثة أدوار كاملة، وكل دور يغيّر طريقة لعبك للمدينة.</p>
+  <div class="modes">
+    <div class="mode cop reveal"><div class="ic">🚔</div><h3>شرطي</h3><ul><li>بلاغات سطو حيّة على الخريطة</li><li>مطاردة اللصوص سيراً وبالسيارات</li><li>صاعق كهربائي واعتقال بمكافآت</li><li>تحطيم سيارات الهروب لإيقافها</li><li>مخزن أسلحة بأسعار الشرطة</li></ul></div>
+    <div class="mode crim reveal"><div class="ic">🦹</div><h3>مجرم</h3><ul><li>سرقة البنوك والكازينو والمتاجر</li><li>مثقاب وقفل بيك وقناع ضد الشهود</li><li>مطاردات ★1-5: حواجز ومسامير ومروحية</li><li>السجن وهروب بالنفق أو السياج أو البطاقة</li><li>السوق السوداء في المخبأ</li></ul></div>
+    <div class="mode cit reveal"><div class="ic">🧑‍💼</div><h3>مواطن</h3><ul><li>سائق تاكسي · توصيل · شاحنة بضائع</li><li>اشترِ شقة أو منزلاً ومرآباً لسياراتك</li><li>جوع وطاقة وتحمّل — كُل ونَم وتدرّب</li><li>حساب بنكي، ذهب، وكازينو</li><li>ملابس وسيارات من سيدان إلى سوبر كار</li></ul></div>
+  </div>
+</div></section>
+
+<section id="city" style="background:linear-gradient(180deg,transparent,#0a1020 20%,#0a1020 80%,transparent)"><div class="wrap">
+  <h2 class="reveal">مدينة <em>بلا مبنى بلا فائدة</em></h2>
+  <p class="sub reveal">كل مبنى في الخريطة يحمل لافتة وباباً، وتقترب منه فتضغط <kbd>E</kbd> لتحصل على خدمته. لا توجد صناديق فارغة.</p>
+  <div class="grid">
+    <div class="card reveal"><div class="ic">🏢</div><h3>أبراج وسط المدينة</h3><p>شقق للشراء، فنادق للنوم والحفظ، ومراكز أعمال لاستلام الوظائف.</p></div>
+    <div class="card reveal"><div class="ic">🍔</div><h3>مطاعم ومقاهي</h3><p>اشترِ الأكل لتملأ الجوع والطاقة — بدونها تتعب وتفقد الصحة.</p></div>
+    <div class="card reveal"><div class="ic">🏦</div><h3>بنوك</h3><p>أودع أموالك لتحميها من الغرامة والموت، أو اسرقها بمثقاب وخزنة داخلية.</p></div>
+    <div class="card reveal"><div class="ic">⛽</div><h3>محطات وقود وورش</h3><p>للسيارات وقود يُستهلك فعلاً. عبّئ، أصلح، وخزّن سياراتك في المرآب.</p></div>
+    <div class="card reveal"><div class="ic">🏋️</div><h3>نوادٍ ومتاجر</h3><p>درّب تحمّلك للركض، اشترِ ملابس، أدوية، أسلحة وسترات واقية.</p></div>
+    <div class="card reveal"><div class="ic">🏭</div><h3>مستودعات ومصانع وسكراب</h3><p>مراكز شحن للوظائف، وساحات سكراب تشتري سياراتك القديمة.</p></div>
+    <div class="card reveal"><div class="ic">💎</div><h3>مجوهرات وبورصة الذهب</h3><p>اشترِ الذهب وبعه حين يرتفع السعر — أو اسرق المحل.</p></div>
+    <div class="card reveal"><div class="ic">🎰</div><h3>كازينو</h3><p>سلوت وروليت لمن يحب المخاطرة… أو هدف السرقة الأكبر بـ ★5.</p></div>
+    <div class="card reveal"><div class="ic">🏥</div><h3>مستشفيات وصيدليات</h3><p>علاج كامل، محلول وريدي، وعلب إسعاف تستخدمها بزر Q.</p></div>
+  </div>
+</div></section>
+
+<section id="life"><div class="wrap">
+  <h2 class="reveal">واقعية <em>تُحسّها</em></h2><p class="sub reveal">تفاصيل صغيرة تصنع الفرق بين لعبة وعالم.</p>
+  <div class="grid">
+    <div class="card reveal"><div class="ic">🏎</div><h3>قيادة بانزلاق</h3><p>فيزياء drift حقيقية، آثار إطارات، دخان، وتروس لصوت المحرك. 11 نوع مركبة بينها حافلة وإسعاف.</p></div>
+    <div class="card reveal"><div class="ic">🌧</div><h3>ليل ونهار ومطر</h3><p>دورة يوم كاملة، نوافذ تضيء ليلاً، شوارع تلمع تحت المطر، وإشارات مرور تلتزم بها السيارات.</p></div>
+    <div class="card reveal"><div class="ic">👁</div><h3>شهود وبلاغات</h3><p>لا يرتفع المطلوب إلا إذا رآك أحد. الشاهد يتصل بالشرطة — أسكته أو اهرب أو ارتدِ قناعاً.</p></div>
+    <div class="card reveal"><div class="ic">⛓</div><h3>سجن حقيقي</h3><p>ملعقة تحفر بها نفقاً، قاطع أسلاك للسياج، وبطاقة تسرقها من حارس. الحراس يرونك ليلاً.</p></div>
+    <div class="card reveal"><div class="ic">🚧</div><h3>حواجز وشرائط مسامير</h3><p>الشرطة تتصاعد: حواجز طرق، إطارات تنفجر، ومروحية بكشّاف تتبعك.</p></div>
+    <div class="card reveal"><div class="ic">💼</div><h3>وظائف</h3><p>تاكسي، توصيل طلبات، وشحن بضائع — بمؤقت وبقشيش وخصم للأضرار. حدّد وجهتك من الخريطة الكبيرة.</p></div>
+  </div>
+</div></section>
+
+<section id="gallery"><div class="wrap">
+  <h2 class="reveal">من <em>داخل</em> اللعبة</h2><p class="sub reveal">لقطات حقيقية من اللعبة نفسها.</p>
+  <div class="gallery reveal">
+    <figure class="g1"><img src="img/skyline-dusk.jpg" alt="" loading="lazy"><figcaption>أفق المدينة ليلاً</figcaption></figure>
+    <figure class="g2"><img src="img/drift-dusk.jpg" alt="" loading="lazy"><figcaption>انزلاق عند الغروب</figcaption></figure>
+    <figure class="g3"><img src="img/bank-interior.jpg" alt="" loading="lazy"><figcaption>داخل البنك والخزنة</figcaption></figure>
+    <figure class="g4"><img src="img/prison.jpg" alt="" loading="lazy"><figcaption>ساحة السجن</figcaption></figure>
+    <figure class="g5"><img src="img/service-menu.jpg" alt="" loading="lazy"><figcaption>كل مبنى له خدمة</figcaption></figure>
+    <figure class="g6"><img src="img/skyline.jpg" alt="" loading="lazy"><figcaption>سماء المدينة</figcaption></figure>
+    <figure class="g7"><img src="img/chase-heli.jpg" alt="" loading="lazy"><figcaption>مطاردة بخمس نجوم</figcaption></figure>
+  </div>
+</div></section>
+
+<section id="controls" style="background:#0a1020"><div class="wrap">
+  <h2 class="reveal">التحكم <em>بسيط</em></h2><p class="sub reveal">تُلعب بلوحة المفاتيح والماوس.</p>
+  <div class="keys reveal">
+    <div class="key"><kbd>W A S D</kbd> حركة وقيادة</div><div class="key"><kbd>الماوس</kbd> الكاميرا والتصويب</div>
+    <div class="key"><kbd>كليك</kbd> إطلاق النار</div><div class="key"><kbd>Shift</kbd> ركض (يستهلك التحمّل)</div>
+    <div class="key"><kbd>Space</kbd> قفز / فرامل يد</div><div class="key"><kbd>E</kbd> تفاعل · مطولاً: سرقة</div>
+    <div class="key"><kbd>F</kbd> الخدمات عند المتاجر المسروقة</div><div class="key"><kbd>R</kbd> تعبئة السلاح</div>
+    <div class="key"><kbd>1-4</kbd> الأسلحة · <kbd>Q</kbd> إسعاف</div><div class="key"><kbd>M</kbd> الخريطة الكبيرة والوجهة</div>
+    <div class="key"><kbd>J</kbd> إنهاء الوظيفة · <kbd>K</kbd> إلغاء الوجهة</div><div class="key"><kbd>H</kbd> منبّه · <kbd>X</kbd> سارينة · <kbd>T</kbd> مطر</div>
+  </div>
+</div></section>
+
+<section id="download"><div class="wrap"><div class="dl reveal">
+  <img src="img/icon.png" width="110" style="border-radius:26px;box-shadow:0 14px 40px #000a" alt="">
+  <h2 style="margin-top:16px">حمّل <em>Mad City 3D</em></h2>
+  <p class="sub" style="margin:8px auto 26px">مجانية بالكامل. اختر الطريقة التي تناسبك:</p>
+  <div class="cta" style="justify-content:center">
+    <a class="btn pri" id="dl-setup" href="#">⬇ المثبّت الرسمي (MadCity-Setup.exe)</a>
+    <a class="btn sec" id="dl-portable" href="#">📦 نسخة محمولة (MadCity.exe)</a>
+    <a class="btn sec" href="play/">▶ العب من المتصفح</a>
+  </div>
+  <div class="steps">
+    <div class="step"><b>1</b>حمّل ملف المثبّت.</div>
+    <div class="step"><b>2</b>شغّله واتبع المعالج (لا يحتاج صلاحيات مسؤول).</div>
+    <div class="step"><b>3</b>إذا ظهر تحذير SmartScreen: «مزيد من المعلومات» ثم «تشغيل على أي حال».</div>
+    <div class="step"><b>4</b>افتح اللعبة من سطح المكتب واستمتع!</div>
+  </div>
+  <div class="chips"><span class="chip">Windows 10/11 — 64 بت</span><span class="chip">Microsoft Edge أو Chrome</span><span class="chip">كرت شاشة يدعم WebGL</span><span class="chip">4 غيغا رام</span><span class="chip">~13 ميغا للتحميل</span></div>
+  <p style="margin-top:22px;opacity:.6;font-size:13px">الملفات غير موقّعة رقمياً (مشروع مستقل)، لذلك قد يعرض ويندوز تحذيراً عند أول تشغيل. الشيفرة كاملة مفتوحة على GitHub.</p>
+</div></div></section>
+
+<section id="faq"><div class="wrap">
+  <h2 class="reveal">أسئلة <em>شائعة</em></h2>
+  <details class="reveal"><summary>هل اللعبة مجانية؟ هل فيها إعلانات؟</summary><p>مجانية بالكامل، بدون إعلانات ولا حسابات ولا مشتريات. تعمل محلياً بلا إنترنت.</p></details>
+  <details class="reveal"><summary>أين يُحفظ تقدّمي؟</summary><p>على جهازك فقط (التخزين المحلي للمتصفح المدمج). يحفظ المال والمنزل والسيارات والملابس والأسلحة تلقائياً، ويمكنك الحفظ يدوياً من منزلك.</p></details>
+  <details class="reveal"><summary>اللعبة بطيئة على جهازي</summary><p>اضغط Esc واختر «جودة منخفضة» — تقلّل الدقة والظلال ومسافة الرؤية.</p></details>
+  <details class="reveal"><summary>كيف أهرب من السجن؟</summary><p>خذ ملعقة من المطبخ ثم احفر الجدار المتصدّع في زنزانتك، أو اعثر على قاطع الأسلاك في أحد المخابئ واقطع السياج الشرقي، أو اسرق بطاقة حارس من ظهره وافتح البوابة. احذر من الحراس ليلاً.</p></details>
+  <details class="reveal"><summary>كيف أُزيل اللعبة؟</summary><p>من «التطبيقات المثبتة» في إعدادات ويندوز، أو من اختصار «إزالة Mad City 3D» في قائمة ابدأ.</p></details>
+</div></section>
+
+<footer><div class="wrap">Mad City 3D · لعبة مستقلة مفتوحة المصدر · الأسماء والأماكن والأحداث خيالية · <a href="https://github.com/Akyedgam3/Claude" style="color:var(--gold)">GitHub</a></div></footer>
+<div class="lb" id="lb"><img alt=""></div>
+<script>
+// ---- download links (edit REPO/BRANCH if you rename them) ----
+const REPO = 'Akyedgam3/Claude', BRANCH = 'ccr-bb5d5309-1jxvi4';
+const raw = f => `https://github.com/${REPO}/raw/${BRANCH}/release/${f}`;
+document.getElementById('dl-setup').href = raw('MadCity-Setup.exe');
+document.getElementById('dl-portable').href = raw('MadCity.exe');
+fetch(`https://api.github.com/repos/${REPO}/releases/latest`).then(r => r.ok ? r.json() : null).then(j => {
+  if (!j || !j.assets) return;
+  for (const a of j.assets) { if (a.name === 'MadCity-Setup.exe') document.getElementById('dl-setup').href = a.browser_download_url; if (a.name === 'MadCity.exe') document.getElementById('dl-portable').href = a.browser_download_url; }
+}).catch(() => {});
+// ---- reveal on scroll + counters ----
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); e.target.querySelectorAll('[data-n]').forEach(c => { const t = +c.dataset.n, d = t % 1 ? 1 : 0; let s = null; const f = ts => { s = s || ts; const k = Math.min(1, (ts - s) / 1400); c.textContent = (t * (1 - Math.pow(1 - k, 3))).toFixed(d); if (k < 1) requestAnimationFrame(f); }; requestAnimationFrame(f); }); } }), { threshold: 0.15 });
+document.querySelectorAll('.reveal').forEach(e => io.observe(e));
+// ---- lightbox ----
+const lb = document.getElementById('lb');
+document.querySelectorAll('.gallery img').forEach(i => i.onclick = () => { lb.querySelector('img').src = i.src; lb.classList.add('on'); });
+lb.onclick = () => lb.classList.remove('on');
+</script>
+</body>
+</html>

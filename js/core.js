@@ -12,7 +12,7 @@ const angDiff = (a, b) => { let d = (b - a) % TAU; if (d > Math.PI) d -= TAU; if
 const $ = id => document.getElementById(id);
 
 // ---------- world layout ----------
-const N = 10, B = 60, R = 18, S = B + R;
+const N = 16, B = 60, R = 18, S = B + R;
 const WORLD = N * S / 2 + R / 2 + 8;
 const rc = k => (k - N / 2) * S;            // centre of road k (0..N)
 const bc = i => (i - (N - 1) / 2) * S;      // centre of block i (0..N-1)
@@ -127,6 +127,7 @@ function updateEnv(dt, focus) {
   for (const c of clouds) { c.position.x += dt * 6; if (c.position.x > 1000) c.position.x = -1000; c.material.opacity = lerp(0.8, 0.95, env.rain) * (1 - env.night * 0.75); c.material.color.setScalar(lerp(1, 0.55, env.rain)); }
   for (const m of env.facadeMats) m.emissiveIntensity = env.night * 0.95;
   if (env.glow) env.glow.material.opacity = env.night * 0.5;
+  carMat.reflectivity = 0.34 * (1 - env.night * 0.85) * (1 - env.rain * 0.4);
   for (const m of env.roadMats) { m.shininess = 20 + env.rain * 70; m.specular.setScalar(0.07 + env.rain * 0.5); m.color.setScalar(1 - env.rain * 0.3); }
   // rain
   env.rainTimer -= dt;
@@ -143,41 +144,51 @@ function updateEnv(dt, focus) {
   }
 }
 
-// ---------- collision ----------
+// ---------- collision (uniform grid broad-phase) ----------
 const colliders = [];       // {x0,x1,z0,z1,h}
-function addCollider(x0, x1, z0, z1, h) { const c = { x0, x1, z0, z1, h }; colliders.push(c); return c; }
-function removeCollider(c) { const i = colliders.indexOf(c); if (i >= 0) colliders.splice(i, 1); }
-
+const GRID = 32, cgrid = new Map(); let cstamp = 0;
+const gkey = (i, j) => (i + 4096) * 8192 + (j + 4096);
+function gridCells(c, fn) { for (let i = Math.floor(c.x0 / GRID); i <= Math.floor(c.x1 / GRID); i++) for (let j = Math.floor(c.z0 / GRID); j <= Math.floor(c.z1 / GRID); j++) fn(gkey(i, j)); }
+function addCollider(x0, x1, z0, z1, h) { const c = { x0, x1, z0, z1, h, on: false }; restoreCollider(c); return c; }
+function restoreCollider(c) { if (c.on) return; c.on = true; colliders.push(c); gridCells(c, k => { let a = cgrid.get(k); if (!a) cgrid.set(k, a = []); a.push(c); }); }
+function removeCollider(c) {
+  if (!c.on) return; c.on = false; const i = colliders.indexOf(c); if (i >= 0) colliders.splice(i, 1);
+  gridCells(c, k => { const a = cgrid.get(k); if (a) { const q = a.indexOf(c); if (q >= 0) a.splice(q, 1); } });
+}
 function resolveCircle(x, z, r, noWorld) {
-  let hit = false;
-  for (const c of colliders) {
-    if (x + r < c.x0 || x - r > c.x1 || z + r < c.z0 || z - r > c.z1) continue;
-    const nx = clamp(x, c.x0, c.x1), nz = clamp(z, c.z0, c.z1);
-    const dx = x - nx, dz = z - nz, d2 = dx * dx + dz * dz;
-    if (d2 < r * r) {
-      hit = true;
-      if (d2 > 1e-6) { const d = Math.sqrt(d2); x = nx + dx / d * r; z = nz + dz / d * r; }
-      else {
-        const l = x - c.x0, rr = c.x1 - x, t = z - c.z0, b = c.z1 - z, m = Math.min(l, rr, t, b);
-        if (m === l) x = c.x0 - r; else if (m === rr) x = c.x1 + r; else if (m === t) z = c.z0 - r; else z = c.z1 + r;
+  let hit = false; const st = ++cstamp;
+  for (let gi = Math.floor((x - r) / GRID); gi <= Math.floor((x + r) / GRID); gi++) for (let gj = Math.floor((z - r) / GRID); gj <= Math.floor((z + r) / GRID); gj++) {
+    const a = cgrid.get(gkey(gi, gj)); if (!a) continue;
+    for (let q = 0; q < a.length; q++) {
+      const c = a[q]; if (c.stamp === st) continue; c.stamp = st;
+      if (x + r < c.x0 || x - r > c.x1 || z + r < c.z0 || z - r > c.z1) continue;
+      const nx = clamp(x, c.x0, c.x1), nz = clamp(z, c.z0, c.z1), dx = x - nx, dz = z - nz, d2 = dx * dx + dz * dz;
+      if (d2 < r * r) {
+        hit = true;
+        if (d2 > 1e-6) { const d = Math.sqrt(d2); x = nx + dx / d * r; z = nz + dz / d * r; }
+        else { const l = x - c.x0, rr = c.x1 - x, t = z - c.z0, b = c.z1 - z, m = Math.min(l, rr, t, b); if (m === l) x = c.x0 - r; else if (m === rr) x = c.x1 + r; else if (m === t) z = c.z0 - r; else z = c.z1 + r; }
       }
     }
   }
-  if (!noWorld) {
-    const W = WORLD - r;
-    if (Math.abs(x) > W || Math.abs(z) > W) { hit = true; x = clamp(x, -W, W); z = clamp(z, -W, W); }
-  }
+  if (!noWorld) { const W = WORLD - r; if (Math.abs(x) > W || Math.abs(z) > W) { hit = true; x = clamp(x, -W, W); z = clamp(z, -W, W); } }
   return { x, z, hit };
 }
 // analytic ray vs. all collider boxes (cheap replacement for mesh raycasting)
 function rayWorld(ox, oy, oz, dx, dy, dz, maxT) {
-  let best = maxT;
-  for (const c of colliders) {
-    let t0 = 0, t1 = best;
-    if (Math.abs(dx) < 1e-9) { if (ox < c.x0 || ox > c.x1) continue; } else { let a = (c.x0 - ox) / dx, b = (c.x1 - ox) / dx; if (a > b) { const t = a; a = b; b = t; } if (a > t0) t0 = a; if (b < t1) t1 = b; if (t0 > t1) continue; }
-    if (Math.abs(dy) < 1e-9) { if (oy < 0 || oy > c.h) continue; } else { let a = -oy / dy, b = (c.h - oy) / dy; if (a > b) { const t = a; a = b; b = t; } if (a > t0) t0 = a; if (b < t1) t1 = b; if (t0 > t1) continue; }
-    if (Math.abs(dz) < 1e-9) { if (oz < c.z0 || oz > c.z1) continue; } else { let a = (c.z0 - oz) / dz, b = (c.z1 - oz) / dz; if (a > b) { const t = a; a = b; b = t; } if (a > t0) t0 = a; if (b < t1) t1 = b; if (t0 > t1) continue; }
-    if (t0 < best) best = t0;
+  let best = maxT; const st = ++cstamp, steps = Math.ceil(maxT / (GRID * 0.5));
+  for (let s = 0; s <= steps; s++) {
+    const t = Math.min(maxT, s * GRID * 0.5), px = ox + dx * t, pz = oz + dz * t;
+    for (let gi = Math.floor((px - 2) / GRID); gi <= Math.floor((px + 2) / GRID); gi++) for (let gj = Math.floor((pz - 2) / GRID); gj <= Math.floor((pz + 2) / GRID); gj++) {
+      const a = cgrid.get(gkey(gi, gj)); if (!a) continue;
+      for (let q = 0; q < a.length; q++) {
+        const c = a[q]; if (c.stamp === st) continue; c.stamp = st;
+        let t0 = 0, t1 = best;
+        if (Math.abs(dx) < 1e-9) { if (ox < c.x0 || ox > c.x1) continue; } else { let a1 = (c.x0 - ox) / dx, b1 = (c.x1 - ox) / dx; if (a1 > b1) { const tt = a1; a1 = b1; b1 = tt; } if (a1 > t0) t0 = a1; if (b1 < t1) t1 = b1; if (t0 > t1) continue; }
+        if (Math.abs(dy) < 1e-9) { if (oy < 0 || oy > c.h) continue; } else { let a1 = -oy / dy, b1 = (c.h - oy) / dy; if (a1 > b1) { const tt = a1; a1 = b1; b1 = tt; } if (a1 > t0) t0 = a1; if (b1 < t1) t1 = b1; if (t0 > t1) continue; }
+        if (Math.abs(dz) < 1e-9) { if (oz < c.z0 || oz > c.z1) continue; } else { let a1 = (c.z0 - oz) / dz, b1 = (c.z1 - oz) / dz; if (a1 > b1) { const tt = a1; a1 = b1; b1 = tt; } if (a1 > t0) t0 = a1; if (b1 < t1) t1 = b1; if (t0 > t1) continue; }
+        if (t0 < best) best = t0;
+      }
+    }
   }
   return best;
 }
@@ -322,3 +333,23 @@ function signalState(axis) {
   if (axis === 'x') return t < 9 ? 'g' : t < 11 ? 'y' : 'r';
   return t < 11 ? 'r' : t < 20 ? 'g' : 'y';
 }
+
+// merge indexed/non-indexed BufferGeometries (position/normal/uv) into one
+function mergeBuffers(list) {
+  let nv = 0, ni = 0; for (const g of list) { nv += g.attributes.position.count; ni += g.index ? g.index.count : g.attributes.position.count; }
+  const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3), uv = new Float32Array(nv * 2), idx = new Uint32Array(ni); let vo = 0, io = 0;
+  for (const g of list) {
+    const p = g.attributes.position, n = g.attributes.normal, u = g.attributes.uv; pos.set(p.array, vo * 3); nor.set(n.array, vo * 3); if (u) uv.set(u.array, vo * 2);
+    if (g.index) { for (let k = 0; k < g.index.count; k++) idx[io + k] = g.index.array[k] + vo; io += g.index.count; } else { for (let k = 0; k < p.count; k++) idx[io + k] = vo + k; io += p.count; }
+    vo += p.count; g.dispose();
+  }
+  const out = new THREE.BufferGeometry(); out.setAttribute('position', new THREE.BufferAttribute(pos, 3)); out.setAttribute('normal', new THREE.BufferAttribute(nor, 3)); out.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); out.setIndex(new THREE.BufferAttribute(idx, 1)); return out;
+}
+// sky reflection cube for car paint
+const carEnvMap = (() => {
+  const faces = []; const mk = (fn) => { const k = document.createElement('canvas'); k.width = k.height = 64; const g = k.getContext('2d'); fn(g); return k; };
+  const side = () => mk(g => { const gr = g.createLinearGradient(0, 0, 0, 64); gr.addColorStop(0, '#4a88d8'); gr.addColorStop(0.48, '#d9e8f6'); gr.addColorStop(0.52, '#7a7f84'); gr.addColorStop(1, '#3c4044'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); });
+  for (let k = 0; k < 6; k++) faces.push(k === 2 ? mk(g => { g.fillStyle = '#3f80d4'; g.fillRect(0, 0, 64, 64); }) : k === 3 ? mk(g => { g.fillStyle = '#3a3d40'; g.fillRect(0, 0, 64, 64); }) : side());
+  const t = new THREE.CubeTexture(faces); t.needsUpdate = true; return t;
+})();
+carMat.envMap = carEnvMap; carMat.reflectivity = 0.32;

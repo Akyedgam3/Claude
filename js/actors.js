@@ -69,7 +69,7 @@ function animHuman(e, speed, dt, aim) {
 // ---------- cars ----------
 const CAR_STATS = {
   sedan: { max: 38, acc: 15, hp: 100 }, taxi: { max: 38, acc: 15, hp: 100 }, muscle: { max: 58, acc: 27, hp: 120 },
-  sport: { max: 66, acc: 28, hp: 95 }, super: { max: 88, acc: 36, hp: 90 }, truck: { max: 28, acc: 9, hp: 180 }, police: { max: 52, acc: 23, hp: 140 }
+  sport: { max: 66, acc: 28, hp: 95 }, suv: { max: 46, acc: 17, hp: 140 }, van: { max: 40, acc: 13, hp: 150 }, bus: { max: 32, acc: 8, hp: 320 }, ambulance: { max: 50, acc: 20, hp: 150 }, super: { max: 88, acc: 36, hp: 90 }, truck: { max: 28, acc: 9, hp: 180 }, police: { max: 52, acc: 23, hp: 140 }
 };
 const cars = [];
 const CAR_COLORS = [0xc0392b, 0x2e86de, 0x27ae60, 0xf1c40f, 0x7f8c8d, 0x34495e, 0xe67e22, 0x8e44ad, 0xecf0f1, 0x1a1a1a];
@@ -80,9 +80,12 @@ const PROFILES = {
   sedan: { L: 4.5, wid: 1.85, body: [[0, .42], [1, .42], [1, .80], [.96, .92], [.64, .98], [.52, 1.42], [.2, 1.44], [.08, 1.0], [0, .95]], glass: [[[.60, 1.0], [.51, 1.38], [.37, 1.40], [.37, 1.0]], [[.32, 1.0], [.32, 1.40], [.21, 1.40], [.11, 1.02]]], belt: 1.0 },
   sport: { L: 4.4, wid: 1.9, body: [[0, .38], [1, .38], [1, .62], [.9, .75], [.66, .82], [.5, 1.18], [.32, 1.22], [.1, .95], [0, .9]], glass: [[[.62, .84], [.52, 1.14], [.40, 1.17], [.40, .84]], [[.36, .84], [.34, 1.16], [.2, 1.0], [.2, .86]]], belt: 0.84 },
   super: { L: 4.6, wid: 2.0, body: [[0, .35], [1, .35], [1, .52], [.88, .66], [.6, .74], [.46, 1.08], [.28, 1.1], [.05, .8], [0, .75]], glass: [[[.58, .76], [.47, 1.04], [.34, 1.07], [.34, .76]], [[.30, .76], [.28, 1.06], [.12, .84], [.14, .78]]], belt: 0.76 },
+  suv: { L: 4.8, wid: 1.95, body: [[0, .5], [1, .5], [1, .95], [.95, 1.05], [.7, 1.1], [.6, 1.62], [.1, 1.65], [0, 1.55]], glass: [[[.66, 1.12], [.59, 1.58], [.36, 1.6], [.36, 1.12]], [[.32, 1.12], [.32, 1.6], [.12, 1.6], [.12, 1.12]]], belt: 1.1 },
+  van: { L: 5.2, wid: 2.0, body: [[0, .5], [1, .5], [1, .95], [.93, 1.1], [.8, 1.2], [.72, 1.9], [0, 1.95]], glass: [[[.78, 1.28], [.73, 1.85], [.56, 1.85], [.56, 1.28]]], belt: 1.2 },
+  bus: { L: 10.6, wid: 2.5, body: [[0, .55], [1, .55], [1, 1.0], [.985, 1.2], [.975, 3.0], [0, 3.05]], glass: [[[.93, 1.6], [.93, 2.75], [.98, 2.75], [.98, 1.6]]].concat([0.06, 0.2, 0.34, 0.48, 0.62, 0.76].map(u => [[u, 1.7], [u, 2.7], [u + 0.12, 2.7], [u + 0.12, 1.7]])), belt: 1.2 },
   truck: { L: 5.4, wid: 2.0, body: [[0, .55], [1, .55], [1, 1.0], [.93, 1.12], [.66, 1.15], [.56, 1.65], [.34, 1.67], [.32, 1.18], [0, 1.18]], glass: [[[.62, 1.2], [.55, 1.6], [.38, 1.62], [.38, 1.2]]], belt: 1.18 }
 };
-const PROF_OF = { sedan: 'sedan', taxi: 'sedan', police: 'sedan', muscle: 'sedan', sport: 'sport', super: 'super', truck: 'truck' };
+const PROF_OF = { suv: 'suv', van: 'van', bus: 'bus', ambulance: 'van', sedan: 'sedan', taxi: 'sedan', police: 'sedan', muscle: 'sedan', sport: 'sport', super: 'super', truck: 'truck' };
 const polyCache = new Map();
 function extrudePoly(pts, L, depth, bevel) {
   const sh = new THREE.Shape(); pts.forEach(([u, y], i) => { const z = (u - 0.5) * L; if (i) sh.lineTo(z, y); else sh.moveTo(z, y); });
@@ -94,7 +97,7 @@ function cachedPoly(key, pts, L, depth, bevel) { let g = polyCache.get(key); if 
 function makeCarMesh(kind, color) {
   const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
   const pk = PROF_OF[kind], pr = PROFILES[pk], L = kind === 'muscle' ? 4.8 : pr.L, wid = kind === 'muscle' ? 1.95 : pr.wid;
-  const bodyC = kind === 'police' ? 0xf2f2f2 : kind === 'taxi' ? 0xf5c518 : color, glassC = 0x0f1a26;
+  const bodyC = kind === 'police' || kind === 'ambulance' ? 0xf2f2f2 : kind === 'taxi' ? 0xf5c518 : kind === 'bus' ? pick([0x2a6bd6, 0xd8442a, 0x2aa65a]) : color, glassC = 0x0f1a26;
   const parts = [{ g: cachedPoly(kind + 'b', pr.body, L, wid - 0.16, true), m: new THREE.Matrix4(), c: bodyC }];
   pr.glass.forEach((poly, i) => parts.push({ g: cachedPoly(kind + 'g' + i, poly, L, wid + 0.04, false), m: new THREE.Matrix4(), c: glassC }));
   const hw = wid / 2, front = L / 2, low = pr.body[0][1];
@@ -114,6 +117,8 @@ function makeCarMesh(kind, color) {
     parts.push(bxp(1.3, 0.1, 0.34, 0, 1.46, 0.14, 0x1a1a1a));
   }
   if (kind === 'taxi') parts.push(bxp(0.55, 0.18, 0.26, 0, 1.52, 0.14, 0xfff6a0));
+  if (kind === 'ambulance') { for (const sx of [-1, 1]) parts.push(bxp(0.012, 0.3, L * 0.9, sx * (hw + 0.006), 1.0, 0, 0xd02020), bxp(0.012, 0.6, 0.18, sx * (hw + 0.008), 1.45, -0.8, 0xd02020), bxp(0.012, 0.18, 0.6, sx * (hw + 0.008), 1.45, -0.8, 0xd02020)); parts.push(bxp(1.4, 0.1, 0.4, 0, 1.97, 0.5, 0x1a1a1a)); }
+  if (kind === 'bus') { for (const sx of [-1, 1]) parts.push(bxp(0.012, 0.25, L * 0.96, sx * (hw + 0.006), 0.9, 0, 0xffffff)); parts.push(bxp(wid - 0.3, 0.3, 0.05, 0, 2.7, front + 0.03, 0x111111), bxp(1.6, 0.18, 0.04, 0, 2.86, front + 0.04, 0xffc020)); }
   const bm = new THREE.Mesh(mergeParts(parts), carMat); bm.castShadow = true; bm.receiveShadow = true; body.add(bm);
   const wheels = [];
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
@@ -121,15 +126,15 @@ function makeCarMesh(kind, color) {
     const w = new THREE.Mesh(wheelGeo, vcMat); w.castShadow = true; pv.add(w); wheels.push({ pv, w, front: sz > 0 });
   }
   let lights = null;
-  if (kind === 'police') {
+  if (kind === 'police' || kind === 'ambulance') {
     const r = new THREE.MeshBasicMaterial({ color: 0xff2020 }), b = new THREE.MeshBasicMaterial({ color: 0x2060ff }), bg = new THREE.BoxGeometry(0.62, 0.14, 0.3);
-    const m1 = new THREE.Mesh(bg, r); m1.position.set(-0.34, 1.56, 0.14); const m2 = new THREE.Mesh(bg, b); m2.position.set(0.34, 1.56, 0.14); body.add(m1, m2); lights = [r, b];
+    const m1 = new THREE.Mesh(bg, r); m1.position.set(-0.34, kind === 'ambulance' ? 2.05 : 1.56, kind === 'ambulance' ? 0.5 : 0.14); const m2 = new THREE.Mesh(bg, b); m2.position.set(0.34, kind === 'ambulance' ? 2.05 : 1.56, kind === 'ambulance' ? 0.5 : 0.14); body.add(m1, m2); lights = [r, b];
   }
   const beam = new THREE.Mesh(carBeamGeo, new THREE.MeshBasicMaterial({ color: 0xfff0c0, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
   beam.position.set(0, 0.8, front); g.add(beam);
   g.add(makeBlob(wid * 1.5, L * 1.25));
   scene.add(g);
-  return { g, body, wheels, lights, beam, len: L };
+  return { g, body, wheels, lights, beam, len: L, wid };
 }
 const carBeamGeo = new THREE.ConeGeometry(2.4, 12, 12, 1, true).translate(0, -6, 0).rotateX(-Math.PI / 2);
 
@@ -138,9 +143,10 @@ function newCar(kind, x, z, h, mode, color) {
   const c = {
     kind, x, z, h, speed: 0, mode, mesh: mesh.g, body: mesh.body, wheels: mesh.wheels, lights: mesh.lights, beam: mesh.beam,
     stun: 0, hitCool: 0, rev: 0, stuck: 0, cruise: rnd(11, 18), axis: 'x', dir: 1, road: 0, next: 0, flash: rnd(0, 1),
-    hp: st.hp, maxHp: st.hp, wreck: false, burn: 0, smokeT: 0, spin: 0, prevSpeed: 0, prevH: h, pitch: 0, roll: 0, steerVis: 0, hits: 0, getaway: false, siren: false
+    len: mesh.len, wid: mesh.wid, rad: mesh.len > 7 ? 3.8 : mesh.len > 5.1 ? 2.5 : 2.15, fuel: 0.45 + Math.random() * 0.55, hp: st.hp, maxHp: st.hp, wreck: false, burn: 0, smokeT: 0, spin: 0, prevSpeed: 0, prevH: h, pitch: 0, roll: 0, steerVis: 0, hits: 0, getaway: false, siren: false
   };
   mesh.g.position.set(x, 0, z); mesh.g.rotation.y = h;
+  if (kind === 'ambulance') c.siren = true;
   cars.push(c); return c;
 }
 function removeCar(c) { scene.remove(c.mesh); const i = cars.indexOf(c); if (i >= 0) cars.splice(i, 1); }
@@ -167,8 +173,8 @@ function explodeCar(c, byPlayer) {
   }
   for (const o of cars) if (o !== c && !o.wreck && Math.hypot(o.x - c.x, o.z - c.z) < 7) damageCar(o, 45, byPlayer);
   if (c.getaway && c.crook) crookLeaveCar(c.crook, c);
-  if (byPlayer && state.team === 'crim' && c.kind === 'police') setWanted(state.wanted + 1, 'تدمير سيارة شرطة');
-  if (byPlayer && state.team === 'crim' && c.mode !== 'chase' && c.kind !== 'police' && Math.random() < 0.5) crime(1, 'تفجير سيارة', c.x, c.z);
+  if (byPlayer && outlaw() && c.kind === 'police') setWanted(state.wanted + 1, 'تدمير سيارة شرطة');
+  if (byPlayer && outlaw() && c.mode !== 'chase' && c.kind !== 'police' && Math.random() < 0.5) crime(1, 'تفجير سيارة', c.x, c.z);
 }
 
 // ---------- traffic on the road grid ----------
@@ -176,29 +182,35 @@ const baseH = (axis, dir) => axis === 'x' ? (dir > 0 ? Math.PI / 2 : -Math.PI / 
 const laneOff = (axis, dir) => axis === 'x' ? (dir > 0 ? 4.4 : -4.4) : (dir > 0 ? -4.4 : 4.4);
 function nextCrossing(pos, dir) { const k = pos / S + N / 2; return dir > 0 ? Math.floor(k + 1e-6) + 1 : Math.ceil(k - 1e-6) - 1; }
 
-function spawnTraffic(farFrom) {
-  for (let tries = 0; tries < 14; tries++) {
-    const axis = Math.random() < 0.5 ? 'x' : 'z', dir = Math.random() < 0.5 ? 1 : -1, road = rint(0, N);
-    const nxt = rint(0, N); if (nxt - dir < 0 || nxt - dir > N) continue;
-    const along = rc(nxt) - dir * rnd(14, S - 14), lane = rc(road) + laneOff(axis, dir);
-    const x = axis === 'x' ? along : lane, z = axis === 'x' ? lane : along;
-    if (farFrom && Math.hypot(x - farFrom.x, z - farFrom.z) < 90) continue;
-    const r = Math.random(), kind = r < 0.1 ? 'police' : r < 0.2 ? 'truck' : r < 0.3 ? 'sport' : r < 0.36 ? 'muscle' : r < 0.5 ? 'taxi' : 'sedan';
+// spawn near a focus point (the player) so a big map stays cheap: cars live within ~380m of the player
+function spawnTraffic(focus) {
+  const cx = focus ? focus.x : 0, cz = focus ? focus.z : 0;
+  for (let tries = 0; tries < 20; tries++) {
+    const axis = Math.random() < 0.5 ? 'x' : 'z', dir = Math.random() < 0.5 ? 1 : -1;
+    const pa = axis === 'x' ? cx : cz, pp = axis === 'x' ? cz : cx;
+    const road = clamp(Math.round(pp / S + N / 2) + rint(-4, 4), 0, N), along = pa + rnd(-340, 340);
+    if (Math.abs(along) > WORLD - 20) continue;
+    const nxt = nextCrossing(along, dir); if (nxt < 0 || nxt > N || nxt - dir < 0 || nxt - dir > N) continue;
+    if (Math.abs(rc(nxt) - along) < 14) continue;
+    const lane = rc(road) + laneOff(axis, dir), x = axis === 'x' ? along : lane, z = axis === 'x' ? lane : along, d = Math.hypot(x - cx, z - cz);
+    if (focus && (d < 110 || d > 380)) continue;
+    if (cars.some(o => Math.abs(o.x - x) < 7 && Math.abs(o.z - z) < 7)) continue;
+    const r = Math.random(), kind = r < 0.06 ? 'police' : r < 0.1 ? 'ambulance' : r < 0.15 ? 'bus' : r < 0.22 ? 'truck' : r < 0.3 ? 'suv' : r < 0.36 ? 'van' : r < 0.44 ? 'sport' : r < 0.5 ? 'muscle' : r < 0.62 ? 'taxi' : 'sedan';
     const c = newCar(kind, x, z, baseH(axis, dir), 'traffic');
-    Object.assign(c, { axis, dir, road, next: nxt, speed: c.cruise });
-    if (kind === 'sport' || kind === 'muscle') c.cruise = rnd(16, 24);
+    Object.assign(c, { axis, dir, road, next: nxt, speed: c.cruise }); if (kind === 'sport' || kind === 'muscle') c.cruise = rnd(16, 24); if (kind === 'bus') c.cruise = rnd(10, 13);
     return c;
   }
 }
-function spawnParked(farFrom) {
-  for (let tries = 0; tries < 14; tries++) {
-    const axis = Math.random() < 0.5 ? 'x' : 'z', dir = Math.random() < 0.5 ? 1 : -1, road = rint(0, N), seg = rint(0, N - 1);
-    const along = rc(seg) + S / 2 + rnd(-S / 2 + 18, S / 2 - 18), off = dir * 7.4;
-    const x = axis === 'x' ? along : rc(road) + off, z = axis === 'x' ? rc(road) + off : along;
-    if (farFrom && Math.hypot(x - farFrom.x, z - farFrom.z) < 40) continue;
+function spawnParked(focus) {
+  const cx = focus ? focus.x : 0, cz = focus ? focus.z : 0;
+  for (let tries = 0; tries < 20; tries++) {
+    const axis = Math.random() < 0.5 ? 'x' : 'z', dir = Math.random() < 0.5 ? 1 : -1, pp = axis === 'x' ? cz : cx, pa = axis === 'x' ? cx : cz;
+    const road = clamp(Math.round(pp / S + N / 2) + rint(-3, 3), 0, N), seg = clamp(Math.floor((pa + rnd(-250, 250)) / S + N / 2), 0, N - 1);
+    const along = rc(seg) + S / 2 + rnd(-S / 2 + 18, S / 2 - 18), off = dir * 7.4, x = axis === 'x' ? along : rc(road) + off, z = axis === 'x' ? rc(road) + off : along;
+    if (focus && (Math.hypot(x - cx, z - cz) < 30 || Math.hypot(x - cx, z - cz) > 300)) continue;
     if (cars.some(o => Math.hypot(o.x - x, o.z - z) < 6)) continue;
-    const r = Math.random(), kind = r < 0.12 ? 'sport' : r < 0.2 ? 'muscle' : r < 0.3 ? 'truck' : 'sedan';
-    return newCar(kind, x, z, baseH(axis, -dir), 'parked');
+    const r = Math.random(), kind = r < 0.1 ? 'sport' : r < 0.18 ? 'muscle' : r < 0.26 ? 'truck' : r < 0.36 ? 'suv' : r < 0.42 ? 'van' : 'sedan';
+    const c = newCar(kind, x, z, baseH(axis, -dir), 'parked'); c.fuel = rnd(0.2, 0.9); return c;
   }
 }
 function joinGrid(c, axis, dir) { // put a car onto the traffic grid at its current position
@@ -248,8 +260,9 @@ function updateIdleCar(c, dt) {
 }
 function carWorldCollide(c) {
   let hitAny = false, side = 0; const [fx, fz] = carForward(c), isP = c.mode === 'player' && c.vx !== undefined;
-  for (const off of [1.5, -1.5]) {
-    const px = c.x + fx * off, pz = c.z + fz * off, r = resolveCircle(px, pz, 1.25);
+  const lo = Math.max(1.5, c.len * 0.33), cr = c.wid / 2 + 0.3;
+  for (const off of [lo, -lo]) {
+    const px = c.x + fx * off, pz = c.z + fz * off, r = resolveCircle(px, pz, cr);
     if (r.hit) { c.x += r.x - px; c.z += r.z - pz; hitAny = true; side += off; }
   }
   if (hitAny && c.hitCool <= 0) {
@@ -265,7 +278,8 @@ function drivePlayerCar(c, dt) {
   if (c.vx === undefined) { c.vx = Math.sin(c.h) * c.speed; c.vz = Math.cos(c.h) * c.speed; c.w = 0; }
   let fx = Math.sin(c.h), fz = Math.cos(c.h), rx = -Math.cos(c.h), rz = Math.sin(c.h);
   let vf = c.vx * fx + c.vz * fz;
-  const thr = (keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0), steer = (keys.KeyA ? 1 : 0) - (keys.KeyD ? 1 : 0), hb = !!keys.Space;
+  const thrIn = (keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0), steer = (keys.KeyA ? 1 : 0) - (keys.KeyD ? 1 : 0), hb = !!keys.Space;
+  const thr = c.fuel > 0 || thrIn < 0 ? thrIn : 0; c.fuel = Math.max(0, c.fuel - dt * (0.0004 + Math.abs(vf) * 0.00003 + (thr > 0 ? 0.0008 : 0)));
   const dv0 = vf;
   if (thr > 0) { if (vf < 0) vf += st.acc * 2.5 * dt; else vf += st.acc * (1 - Math.pow(clamp(vf / max, 0, 1), 2)) * dt * (hb ? 0.2 : 1); }
   else if (thr < 0) { if (vf > 0.5) vf -= st.acc * 2.2 * dt; else vf = Math.max(vf - st.acc * 0.6 * dt, -max * 0.35); }
@@ -328,14 +342,13 @@ function updateChase(c, dt) {
 }
 
 function separateCars() {
-  const R2 = 2.15;
   for (let a = 0; a < cars.length; a++) for (let b = a + 1; b < cars.length; b++) {
     const A = cars[a], Bc = cars[b];
     const sA = A.mode === 'parked' || A.wreck || (A.mode === 'idle' && Math.abs(A.speed) < 0.5);
     const sB = Bc.mode === 'parked' || Bc.wreck || (Bc.mode === 'idle' && Math.abs(Bc.speed) < 0.5);
     if (sA && sB) continue;
-    const dx = Bc.x - A.x, dz = Bc.z - A.z; if (Math.abs(dx) > 5 || Math.abs(dz) > 5) continue;
-    const d = Math.hypot(dx, dz), min = R2 * 2; if (d >= min || d < 1e-4) continue;
+    const min = A.rad + Bc.rad, dx = Bc.x - A.x, dz = Bc.z - A.z; if (Math.abs(dx) > min || Math.abs(dz) > min) continue;
+    const d = Math.hypot(dx, dz); if (d >= min || d < 1e-4) continue;
     const nx = dx / d, nz = dz / d, pen = min - d, wa = sA ? 0 : sB ? 1 : 0.5, wb = sB ? 0 : sA ? 1 : 0.5;
     A.x -= nx * pen * wa; A.z -= nz * pen * wa; Bc.x += nx * pen * wb; Bc.z += nz * pen * wb;
     const impact = Math.abs(A.speed) + Math.abs(Bc.speed);
@@ -346,7 +359,7 @@ function separateCars() {
         if (impact > 14 && !u.crashSnd) { u.crashSnd = 0.3; sfx.crash(); }
         if (u.vx !== undefined) { u.vx *= -0.25; u.vz *= -0.25; u.w += rnd(-1, 1) * Math.min(impact, 30) * 0.05; camShake = Math.max(camShake, clamp(impact / 40, 0, 0.7)); }
         u.speed *= -0.2;
-        if (o.mode === 'traffic' && state.team === 'crim' && impact > 12 && Math.random() < 0.3) crime(1, 'تصادم!', u.x, u.z);
+        if (o.mode === 'traffic' && outlaw() && impact > 12 && Math.random() < 0.3) crime(1, 'تصادم!', u.x, u.z);
       }
     }
   }
@@ -369,7 +382,7 @@ function syncCar(c, dt) {
     const ph = Math.floor((state.time + c.flash) * 6) % 2;
     c.lights[0].color.setHex(on ? (ph ? 0xff2020 : 0x300808) : 0x7a1010); c.lights[1].color.setHex(on ? (ph ? 0x081030 : 0x2a6cff) : 0x10204a);
   }
-  if (!c.wreck) c.beam.material.opacity = (c.mode === 'parked' || c.mode === 'idle') ? 0 : env.night * 0.18;
+  if (!c.wreck) c.beam.material.opacity = (c.mode === 'parked' || c.mode === 'idle') ? 0 : env.night * 0.1;
   // damage smoke / fire
   const frac = c.hp / c.maxHp;
   c.smokeT -= dt;

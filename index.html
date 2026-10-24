@@ -78,6 +78,21 @@
   .qrow button{padding:7px 16px;border-radius:8px;border:1px solid #fff4;background:#ffffff14;color:#fff;cursor:pointer}
   .qrow button.sel{background:var(--gold);color:#111;font-weight:700}
   #bigmap{width:min(86vh,90vw);height:min(86vh,90vw);border-radius:12px;border:3px solid #fff;background:#222}
+  .needs{display:flex;gap:8px;margin-top:8px;font-size:12px}
+  .needs span{display:flex;align-items:center;gap:3px;flex:1}
+  .needs i{display:block;flex:1;height:6px;border-radius:4px;background:#0008;overflow:hidden}
+  .needs b{display:block;height:100%;width:100%;background:#ffb347;transition:width .3s}
+  #energybar{background:#6bb8ff}#stambar{background:#6bff9a}
+  .fuel{display:flex;align-items:center;gap:4px;margin-top:5px;font-size:13px}
+  .fuel i{display:block;flex:1;height:6px;border-radius:4px;background:#0008;overflow:hidden}.fuel b{display:block;height:100%;background:#ffd23f}
+  #fuelwarn{display:none;color:#ff6a6a;font-size:13px;margin-top:4px;font-weight:700}
+  #jobbox{position:absolute;right:16px;top:244px;width:190px;padding:10px 12px;font-size:12px;line-height:1.6;display:none;border-color:#4dc3ff}
+  #jobtitle{font-weight:800;color:#4dc3ff}
+  #wpbox{position:absolute;right:16px;top:330px;width:190px;padding:7px 12px;font-size:12px;display:none;border-color:#4dff9a}
+  .shophead{margin:12px 0 2px;font-size:13px;font-weight:700;color:var(--gold);opacity:.9}
+  .shoprow small{display:block;font-size:12px;opacity:.65;margin-top:2px}
+  .modal .box{max-height:86vh}
+  .card.cit:hover{border-color:var(--green);box-shadow:0 0 30px #4dff9a55}
 </style>
 </head>
 <body>
@@ -89,6 +104,7 @@
     <div id="cash">$0</div>
     <div class="bar"><div id="hpbar"></div></div>
     <div class="bar" id="armorwrap"><div id="armorbar"></div></div>
+    <div class="needs"><span title="جوع">🍔<i><b id="foodbar"></b></i></span><span title="طاقة">⚡<i><b id="energybar"></b></i></span><span title="تحمّل">🏃<i><b id="stambar"></b></i></span></div>
     <div id="stars"></div>
   </div>
   <div id="objective" class="panel"></div>
@@ -96,7 +112,9 @@
   <div id="crosshair"></div>
   <div id="robwrap"><div style="margin-bottom:6px;font-weight:700" id="robtext">جاري السرقة...</div><div class="bar"><div id="robbar"></div></div></div>
   <div id="prompt" class="panel"></div>
-  <div id="speedo" class="panel"><span id="speedv">0</span><small>km/h</small><div id="carhp"></div></div>
+  <div id="speedo" class="panel"><span id="speedv">0</span><small>km/h</small><div id="carhp"></div><div class="fuel">⛽<i><b id="fuelbar"></b></i></div><div id="fuelwarn">⛽ نفد الوقود!</div></div>
+  <div id="jobbox" class="panel"><div id="jobtitle"></div><div id="jobtext"></div></div>
+  <div id="wpbox" class="panel"></div>
   <div id="ammo" class="panel"><div id="wname"></div><div id="wammo"></div><div id="hotbar"></div></div>
   <div id="items" class="panel"></div>
   <div id="clock"></div>
@@ -113,6 +131,10 @@
     <div class="card cop" data-team="cop">
       <div class="ic">🚔</div><h3>شرطي</h3>
       <p>انطلق من مركز الشرطة، تتبّع بلاغات السطو على الخريطة، طارد اللصوص واعتقلهم واربح المكافآت.</p>
+    </div>
+    <div class="card cit" data-team="citizen">
+      <div class="ic">🧑‍💼</div><h3>مواطن</h3>
+      <p>عِش حياة كاملة: اعمل سائق تاكسي أو توصيل، اشترِ شقة وسيارة، كُل ونَم، استثمر في الذهب والعب في الكازينو.</p>
     </div>
     <div class="card crim" data-team="crim">
       <div class="ic">🦹</div><h3>مجرم</h3>
@@ -133,15 +155,16 @@
 </div>
 
 <div id="shop" class="modal hidden"><div class="box">
-  <h2 id="shoptitle"></h2><div style="margin-bottom:8px">رصيدك: <b id="shopcash" style="color:var(--green)"></b></div>
+  <h2 id="shoptitle"></h2><div id="shopsub" style="opacity:.7;font-size:13px;margin-bottom:6px"></div><div style="margin-bottom:8px">رصيدك: <b id="shopcash" style="color:var(--green)"></b></div>
   <div id="shoplist"></div><div style="text-align:center"><button class="btn" id="shopclose">إغلاق</button></div>
 </div></div>
-<div id="bigmapwrap" class="modal hidden"><div style="text-align:center"><canvas id="bigmap" width="700" height="700"></canvas><br><button class="btn" id="bigmapclose">إغلاق (M)</button></div></div>
+<div id="bigmapwrap" class="modal hidden"><div style="text-align:center"><canvas id="bigmap" width="760" height="760"></canvas><br><div style="font-size:13px;opacity:.8;margin:6px">انقر على الخريطة لتحديد وجهة · العجلة للتقريب · الألوان: 🟡 سرقة · 🟧 مطاعم · 🟦 خدمات</div><button class="btn" id="bigmapclose">إغلاق (M)</button></div></div>
 
 <script src="lib/three.min.js"></script>
 <script src="js/core.js"></script>
 <script src="js/world.js"></script>
 <script src="js/actors.js"></script>
+<script src="js/life.js"></script>
 <script src="js/game.js"></script>
 <script>setInterval(function(){fetch('/__ping').catch(function(){})},5000)</script>
 </body>
