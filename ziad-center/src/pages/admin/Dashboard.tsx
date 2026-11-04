@@ -15,7 +15,7 @@ export default function Dashboard({ orders }: { orders: Order[] }) {
   const m0 = new Date(); m0.setDate(1); m0.setHours(0, 0, 0, 0);
   const inc = led.filter(l => l.type === "income" && l.date >= +m0).reduce((a, l) => a + l.amountUSD, 0);
   const exp = led.filter(l => l.type === "expense" && l.date >= +m0).reduce((a, l) => a + l.amountUSD, 0);
-  const cards: [string, string, string][] = [[t("openOrders"), String(open), "text-cyan"], [t("pendingPay"), String(pend), "text-yellow"],
+  const cards: [string, string, string][] = [[t("openOrders"), String(open), "text-gold"], [t("pendingPay"), String(pend), "text-yellow"],
     ...(acct ? [[`${t("income")} (${t("month")})`, money(inc, settings.usdToSyp), "text-emerald-400"], [`${t("expenses")} (${t("month")})`, money(exp, settings.usdToSyp), "text-rose-400"]] as [string, string, string][] : [])];
   return (
     <Page className="space-y-6">

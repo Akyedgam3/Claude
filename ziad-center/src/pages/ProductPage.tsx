@@ -24,7 +24,7 @@ export default function ProductPage() {
   };
   return (
     <Page className="max-w-5xl mx-auto px-4 pt-10 grid md:grid-cols-2 gap-8">
-      <motion.div initial={{ scale: .9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="card h-72 md:h-auto grid place-items-center text-9xl" style={{ background: `radial-gradient(circle at 30% 20%, hsl(${p.hue} 90% 60% / .55), transparent 60%), radial-gradient(circle at 80% 90%, hsl(${(p.hue + 80) % 360} 90% 60% / .4), transparent 55%), #121936` }}>
+      <motion.div initial={{ scale: .9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="card h-72 md:h-auto grid place-items-center text-9xl" style={{ background: `radial-gradient(circle at 30% 20%, hsl(${30 + p.hue % 25} 85% 55% / .35), transparent 60%), radial-gradient(circle at 80% 90%, hsl(${10 + p.hue % 20} 90% 55% / .2), transparent 55%), #151517` }}>
         <motion.span animate={{ rotate: [-4, 4, -4], y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 5 }}>{p.icon}</motion.span>
       </motion.div>
       <div className="space-y-5">
@@ -32,7 +32,7 @@ export default function ProductPage() {
         {p.options.map(g => (
           <div key={g.key}><span className="label">{pick(g)}</span>
             <div className="flex flex-wrap gap-2">
-              {g.choices.map(c => <button key={c.id} onClick={() => setSel({ ...sel, [g.key]: c.id })} className={`px-4 py-2 rounded-full border text-sm transition ${full[g.key] === c.id ? "border-cyan bg-cyan/15 text-cyan font-bold" : "border-line hover:border-slate-400"}`}>{pick(c)}</button>)}
+              {g.choices.map(c => <button key={c.id} onClick={() => setSel({ ...sel, [g.key]: c.id })} className={`px-4 py-2 rounded-full border text-sm transition ${full[g.key] === c.id ? "border-gold bg-gold/15 text-gold font-bold" : "border-line hover:border-slate-400"}`}>{pick(c)}</button>)}
             </div>
           </div>
         ))}
@@ -44,7 +44,7 @@ export default function ProductPage() {
           <div className="flex justify-between text-sm text-slate-400"><span>{t("unit")}</span><span>{money(unit, settings.usdToSyp)}</span></div>
           {sale > 0 && <div className="flex justify-between text-sm text-rose-400"><span>⚡ {t("flash")}</span><span>-{Math.round(sale * 100)}%</span></div>}
           {disc > 0 && <div className="flex justify-between text-sm text-emerald-400"><span>{t("discount")}</span><span>-{disc * 100}%</span></div>}
-          <div className="flex justify-between text-xl font-extrabold"><span>{t("total")}</span><motion.span key={total} initial={{ scale: 1.2, color: "#22d3ee" }} animate={{ scale: 1, color: "#fff" }}>{money(total, settings.usdToSyp)}</motion.span></div>
+          <div className="flex justify-between text-xl font-extrabold"><span>{t("total")}</span><motion.span key={total} initial={{ scale: 1.2, color: "#e9b85b" }} animate={{ scale: 1, color: "#fff" }}>{money(total, settings.usdToSyp)}</motion.span></div>
         </div>
         <div className="flex gap-3"><button className="btn btn-primary flex-1" onClick={() => add(true)}>{t("orderNow")}</button><button className="btn btn-ghost" onClick={() => add(false)}>{t("addCart")}</button></div>
       </div>

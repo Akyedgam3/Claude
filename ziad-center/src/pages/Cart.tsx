@@ -39,7 +39,7 @@ export default function Cart() {
                 <div className="text-slate-400">{t("qty")}: {i.qty} {i.customSize && `• ${i.customSize}`}</div>
                 {i.notes && <div className="text-slate-500 italic">{i.notes}</div>}
               </div>
-              <div className="text-end"><b className="text-cyan">{money(i.totalUSD, settings.usdToSyp)}</b><button onClick={() => cart.remove(n)} className="block text-xs text-rose-400 mt-1">{t("remove")}</button></div>
+              <div className="text-end"><b className="text-gold">{money(i.totalUSD, settings.usdToSyp)}</b><button onClick={() => cart.remove(n)} className="block text-xs text-rose-400 mt-1">{t("remove")}</button></div>
             </div>
           );
         })}

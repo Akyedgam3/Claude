@@ -13,7 +13,7 @@ React + Vite + Tailwind + Framer Motion + Firebase (Auth/Firestore/Hosting — �
 ## الإعداد
 1. **Firebase**: أنشئ مشروعاً → فعّل Authentication (Google + Email/Password) و Firestore → انسخ الـ web config إلى `.env` (انظر `.env.example`).
 2. `npm i && npm run build && npx firebase deploy --only hosting,firestore:rules`
-3. **أول مدير**: سجّل دخولك بالموقع مرة، ثم من Firebase Console → Firestore → `users/{uid}` غيّر `role` إلى `admin`. بعدها تدير بقية الفريق من لوحة الإعدادات.
+3. **أول مدير**: افتح `https://موقعك/setup` وأنت مسجّل دخول واضغط «اجعلني المدير» — تُحمَّل المنتجات الافتراضية أيضاً وتُقفل الصفحة بعدها. باقي الفريق تغيّر أدوارهم من الإعدادات.
 4. **بوت تلغرام**: أنشئ بوتاً من @BotFather، وأرسل له `/start` من حسابك، واعرف chat id (مثلاً @userinfobot).
 5. **Worker** (مجلد `worker/`): عدّل `wrangler.toml`، ثم:
    ```bash

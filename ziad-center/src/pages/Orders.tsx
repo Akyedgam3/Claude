@@ -14,10 +14,10 @@ export default function Orders() {
       {loading && <div className="skeleton h-20" />}
       {!loading && !rows.length && <p className="text-slate-400">{t("noOrders")}</p>}
       {rows.map(o => (
-        <Link key={o.id} to={`/orders/${o.id}`} className="card p-4 flex items-center gap-4 hover:border-cyan transition">
+        <Link key={o.id} to={`/orders/${o.id}`} className="card p-4 flex items-center gap-4 hover:border-gold transition">
           <div className="flex-1"><b dir="ltr">{o.code}</b><div className="text-xs text-slate-400">{new Date(o.createdAt).toLocaleDateString(lang === "ar" ? "ar-SY" : "en-GB")}</div></div>
           <span className="text-xs px-3 py-1 rounded-full bg-white/10">{t(`s_${o.stage}` as Key)}</span>
-          <b className="text-cyan">{money(o.totalUSD, settings.usdToSyp)}</b>
+          <b className="text-gold">{money(o.totalUSD, settings.usdToSyp)}</b>
         </Link>
       ))}
     </Page>

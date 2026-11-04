@@ -10,7 +10,13 @@ service cloud.firestore {
       allow read: if signedIn() && (request.auth.uid == uid || admin());
       // الزبون ينشئ ملفه كـ customer فقط؛ تغيير الدور للمدير فقط
       allow create: if signedIn() && request.auth.uid == uid && request.resource.data.role == 'customer';
-      allow update: if admin();
+      allow update: if admin() || (request.auth.uid == uid && request.resource.data.role == 'admin'
+        && getAfter(/databases/$(db)/documents/config/owner).data.uid == request.auth.uid);
+    }
+    // أول مستخدم يفتح /setup يحجز ملكية الموقع مرة واحدة
+    match /config/owner {
+      allow read: if true;
+      allow create: if signedIn() && !exists(/databases/$(db)/documents/config/owner) && request.resource.data.uid == request.auth.uid;
     }
     match /settings/{d} { allow read: if true; allow write: if admin(); }
     match /products/{d} { allow read: if true; allow write: if admin(); }

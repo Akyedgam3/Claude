@@ -13,8 +13,8 @@ export default function Layout() {
   const link = ({ isActive }: { isActive: boolean }) => `px-3 py-1.5 rounded-full text-sm transition ${isActive ? "bg-white/10 text-white" : "text-slate-300 hover:text-white"}`;
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-40 backdrop-blur-xl bg-[#0b1020]/70 border-b border-line">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center gap-3">
+      <header className="sticky top-3 z-40 mx-3 mt-3 rounded-full backdrop-blur-xl bg-[#0a0a0b]/75 border border-line">
+        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center gap-3">
           <Link to="/" className="flex items-center gap-2 font-extrabold text-lg"><Logo /><span className="hidden sm:inline grad-text">{t("brand")}</span></Link>
           <nav className="flex-1 flex items-center gap-1 overflow-x-auto mx-2">
             <NavLink to="/" end className={link}>{t("home")}</NavLink>

@@ -4,16 +4,16 @@ import { db } from "../../lib/firebase";
 import { useI18n } from "../../lib/i18n";
 import { useData } from "../../lib/data";
 import { SEED_PRODUCTS } from "../../lib/catalog";
-import type { Product } from "../../lib/types";
+import type { OptionGroup, Product } from "../../lib/types";
 import { Page } from "../../components/Page";
 
 export default function AdminProducts() {
   const { t, pick } = useI18n(); const { products } = useData();
-  const [edit, setEdit] = useState<Product | null>(null); const [json, setJson] = useState("");
-  const open = (p: Product) => { setEdit(p); setJson(JSON.stringify(p.options, null, 1)); };
+  const [edit, setEdit] = useState<Product | null>(null);
+  const open = (p: Product) => setEdit(structuredClone(p));
   const save = async () => {
     if (!edit) return; const { id, ...rest } = edit;
-    await setDoc(doc(db, "products", id), { ...rest, options: JSON.parse(json) }); setEdit(null);
+    await setDoc(doc(db, "products", id), JSON.parse(JSON.stringify(rest))); setEdit(null);
   };
   const seed = async () => { const b = writeBatch(db); SEED_PRODUCTS.forEach(({ id, ...p }) => b.set(doc(collection(db, "products"), id), p)); await b.commit(); };
   const blank: Product = { id: "p" + Date.now(), ar: "", en: "", descAr: "", descEn: "", icon: "🖨️", hue: 200, basePrice: 1, minQty: 1, options: [], active: true };
@@ -37,11 +37,32 @@ export default function AdminProducts() {
               <div><label className="label">{t("saleEnds")}</label><input className="input" type="datetime-local" value={edit.sale ? new Date(edit.sale.ends - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 16) : ""} onChange={e => setEdit({ ...edit, sale: { pct: edit.sale?.pct ?? 0, ends: +new Date(e.target.value) } })} /></div>
               <label className="flex items-center gap-2 mt-6"><input type="checkbox" checked={edit.active} onChange={e => setEdit({ ...edit, active: e.target.checked })} /> {t("active")}</label>
             </div>
-            <label className="label">options (JSON)</label><textarea className="input font-mono text-xs" dir="ltr" rows={8} value={json} onChange={e => setJson(e.target.value)} />
+            <OptionsEditor value={edit.options} onChange={options => setEdit({ ...edit, options })} />
             <div className="flex gap-2"><button className="btn btn-primary" onClick={save}>{t("save")}</button><button className="btn btn-ghost" onClick={() => setEdit(null)}>{t("cancel")}</button></div>
           </div>
         </div>
       )}
     </Page>
+  );
+}
+
+function OptionsEditor({ value, onChange }: { value: OptionGroup[]; onChange(v: OptionGroup[]): void }) {
+  const set = (gi: number, g: OptionGroup) => onChange(value.map((x, i) => i === gi ? g : x));
+  return (
+    <div className="space-y-3">
+      {value.map((g, gi) => (
+        <div key={gi} className="rounded-xl border border-line p-3 space-y-2">
+          <div className="flex gap-2"><input className="input" placeholder="عربي" value={g.ar} onChange={e => set(gi, { ...g, ar: e.target.value, key: g.key || "o" + gi })} /><input className="input" placeholder="English" value={g.en} onChange={e => set(gi, { ...g, en: e.target.value })} /><button className="text-rose-400" onClick={() => onChange(value.filter((_, i) => i !== gi))}>✕</button></div>
+          {g.choices.map((c, ci) => (
+            <div key={ci} className="flex gap-2 items-center ps-4">
+              <input className="input" placeholder="عربي" value={c.ar} onChange={e => set(gi, { ...g, choices: g.choices.map((x, i) => i === ci ? { ...x, ar: e.target.value, id: x.id || "c" + ci } : x) })} />
+              <input className="input" placeholder="English" value={c.en} onChange={e => set(gi, { ...g, choices: g.choices.map((x, i) => i === ci ? { ...x, en: e.target.value } : x) })} />
+              <input className="input !w-24" type="number" step="0.001" title="+$" value={c.add} onChange={e => set(gi, { ...g, choices: g.choices.map((x, i) => i === ci ? { ...x, add: +e.target.value } : x) })} />
+              <button className="text-rose-400" onClick={() => set(gi, { ...g, choices: g.choices.filter((_, i) => i !== ci) })}>✕</button>
+            </div>))}
+          <button className="text-xs text-gold ps-4" onClick={() => set(gi, { ...g, choices: [...g.choices, { id: "c" + g.choices.length, ar: "", en: "", add: 0 }] })}>+ خيار / choice</button>
+        </div>))}
+      <button className="btn btn-ghost !py-1 text-sm" onClick={() => onChange([...value, { key: "o" + value.length, ar: "", en: "", choices: [{ id: "c0", ar: "", en: "", add: 0 }] }])}>+ مجموعة خيارات / option group</button>
+    </div>
   );
 }

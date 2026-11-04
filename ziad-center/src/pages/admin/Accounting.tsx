@@ -30,11 +30,11 @@ export default function Accounting() {
   return (
     <Page className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3"><h1 className="text-3xl font-extrabold">{t("accounting")}</h1>
-        <div className="flex gap-2">{(["today", "month", "all"] as const).map(r => <button key={r} onClick={() => setRange(r)} className={`px-3 py-1 rounded-full text-xs border ${range === r ? "border-cyan text-cyan" : "border-line text-slate-400"}`}>{t(r)}</button>)}<button className="btn btn-ghost !py-1 text-xs" onClick={csv}>CSV</button></div></div>
+        <div className="flex gap-2">{(["today", "month", "all"] as const).map(r => <button key={r} onClick={() => setRange(r)} className={`px-3 py-1 rounded-full text-xs border ${range === r ? "border-gold text-gold" : "border-line text-slate-400"}`}>{t(r)}</button>)}<button className="btn btn-ghost !py-1 text-xs" onClick={csv}>CSV</button></div></div>
       <div className="grid grid-cols-3 gap-4">
         <div className="card p-4"><div className="text-sm text-slate-400">{t("income")}</div><div className="text-2xl font-extrabold text-emerald-400">{money(inc, rate)}</div></div>
         <div className="card p-4"><div className="text-sm text-slate-400">{t("expenses")}</div><div className="text-2xl font-extrabold text-rose-400">{money(exp, rate)}</div></div>
-        <div className="card p-4"><div className="text-sm text-slate-400">{t("profit")}</div><div className={`text-2xl font-extrabold ${inc - exp >= 0 ? "text-cyan" : "text-rose-400"}`}>{money(inc - exp, rate)}</div></div>
+        <div className="card p-4"><div className="text-sm text-slate-400">{t("profit")}</div><div className={`text-2xl font-extrabold ${inc - exp >= 0 ? "text-gold" : "text-rose-400"}`}>{money(inc - exp, rate)}</div></div>
       </div>
       <div className="card p-4 grid sm:grid-cols-5 gap-2 items-end">
         <select className="input" value={f.type} onChange={e => setF({ ...f, type: e.target.value as "income" | "expense" })}><option value="expense">{t("expenses")}</option><option value="income">{t("income")}</option></select>

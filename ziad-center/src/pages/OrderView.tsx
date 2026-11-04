@@ -23,10 +23,10 @@ export default function OrderView() {
   };
   return (
     <Page className="max-w-3xl mx-auto px-4 pt-10 space-y-5">
-      <div className="flex items-center justify-between"><h1 className="text-2xl font-extrabold">{t("order")} <span dir="ltr" className="grad-text">{o.code}</span></h1><b className="text-xl text-cyan">{money(o.totalUSD, settings.usdToSyp)}</b></div>
+      <div className="flex items-center justify-between"><h1 className="text-2xl font-extrabold">{t("order")} <span dir="ltr" className="grad-text">{o.code}</span></h1><b className="text-xl text-gold">{money(o.totalUSD, settings.usdToSyp)}</b></div>
 
       {pay === "unpaid" && o.stage !== "cancelled" && (
-        <div className="card p-6 text-center space-y-4 border-cyan/50">
+        <div className="card p-6 text-center space-y-4 border-gold/50">
           <h2 className="text-xl font-extrabold">{t("payTitle")}</h2>
           <p className="text-sm text-slate-400">1) {t("payStep1")}</p>
           {settings.shamcashQr ? <img src={settings.shamcashQr} alt="Sham Cash QR" className="mx-auto w-56 h-56 object-contain rounded-2xl bg-white p-2" /> : <div className="text-slate-500">{t("noQr")}</div>}

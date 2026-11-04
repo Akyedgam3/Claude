@@ -7,44 +7,51 @@ import { STAGES, STAGE_ROLE, type Order, type Stage } from "../../lib/types";
 import { Page } from "../../components/Page";
 import Timeline from "../../components/Timeline";
 
+const COLS: Stage[] = [...STAGES, "cancelled"];
 export default function AdminOrders({ orders }: { orders: Order[] }) {
   const { t, money, pick } = useI18n(); const { user, role } = useAuth(); const { settings, products } = useData();
-  const [q, setQ] = useState(""); const [filter, setFilter] = useState<Stage | "all">("all"); const [open, setOpen] = useState<string | null>(null);
+  const [q, setQ] = useState(""); const [openId, setOpenId] = useState<string | null>(null);
   const by = user?.email || user?.uid || "staff";
-  const list = orders.filter(o => (filter === "all" || o.stage === filter) && (!q || (o.code + o.customerName + o.phone).toLowerCase().includes(q.toLowerCase())));
+  const list = orders.filter(o => !q || (o.code + o.customerName + o.phone).toLowerCase().includes(q.toLowerCase()));
+  const open = orders.find(o => o.id === openId);
+  const next = (o: Order) => { const s = STAGES[STAGES.indexOf(o.stage) + 1]; return s && STAGE_ROLE[s].includes(role) ? s : null; };
   return (
     <Page className="space-y-4">
-      <h1 className="text-3xl font-extrabold">{t("orders")}</h1>
-      <div className="flex gap-2 flex-wrap items-center">
-        <input className="input !w-56" placeholder={t("search")} value={q} onChange={e => setQ(e.target.value)} />
-        {(["all", ...STAGES] as const).map(s => <button key={s} onClick={() => setFilter(s)} className={`px-3 py-1 rounded-full text-xs border ${filter === s ? "border-cyan text-cyan" : "border-line text-slate-400"}`}>{s === "all" ? t("all") : t(`s_${s}` as Key)}</button>)}
-      </div>
-      {list.map(o => (
-        <div key={o.id} className="card p-4">
-          <button className="w-full flex items-center gap-3 text-start flex-wrap" onClick={() => setOpen(open === o.id ? null : o.id)}>
-            <b dir="ltr" className="w-40">{o.code}</b><span className="flex-1 min-w-32">{o.customerName} <span className="text-slate-500" dir="ltr">{o.phone}</span></span>
-            <span className={`text-xs px-2 py-1 rounded-full ${o.payment.status === "confirmed" ? "bg-emerald-500/20 text-emerald-300" : o.payment.status === "pending" ? "bg-yellow/20 text-yellow" : "bg-white/10"}`}>{t(`p_${o.payment.status}` as Key)}</span>
-            <span className="text-xs px-2 py-1 rounded-full bg-cyan/15 text-cyan">{t(`s_${o.stage}` as Key)}</span><b>{money(o.totalUSD, settings.usdToSyp)}</b>
-          </button>
-          {open === o.id && (
-            <div className="mt-4 grid md:grid-cols-2 gap-6 border-t border-line pt-4">
-              <div className="space-y-2 text-sm">
-                {o.items.map((i, n) => { const p = products.find(x => x.id === i.productId); return <div key={n} className="bg-white/5 rounded-xl p-3"><b>{p ? pick(p) : i.name} × {i.qty}</b>{i.customSize && <div>📐 {i.customSize}</div>}<div className="text-slate-400">{Object.entries(i.options).map(([k, v]) => `${k}: ${v}`).join(" • ")}</div>{i.notes && <div className="italic text-slate-300">“{i.notes}”</div>}</div>; })}
-                <div>📍 {o.address}</div>{o.designFile && <div>📎 {o.designFile}</div>}
-                <div className="flex gap-2 flex-wrap pt-2">
-                  {o.payment.status !== "confirmed" && role !== "designer" && <button className="btn btn-ghost !py-1 text-xs" onClick={() => markPaidManually(o, by)}>💵 {t("pay")} (cash)</button>}
-                </div>
-              </div>
-              <div className="space-y-4">
-                <Timeline order={o} />
-                <div className="flex gap-2 flex-wrap">
-                  {[...STAGES, "cancelled" as Stage].filter(s => s !== o.stage && STAGE_ROLE[s].includes(role)).map(s => <button key={s} className="btn btn-ghost !py-1 text-xs" onClick={() => moveStage(o, s, by)}>→ {t(`s_${s}` as Key)}</button>)}
-                </div>
-              </div>
+      <div className="flex items-center justify-between gap-3 flex-wrap"><h1 className="display text-4xl">{t("orders")}</h1><input className="input !w-64" placeholder={t("search")} value={q} onChange={e => setQ(e.target.value)} /></div>
+      <div className="flex gap-3 overflow-x-auto pb-3 -mx-1 px-1 snap-x">
+        {COLS.map(c => { const col = list.filter(o => o.stage === c); return (
+          <div key={c} className="w-72 shrink-0 snap-start">
+            <div className="flex items-center justify-between mb-2 px-1"><b className="text-sm">{t(`s_${c}` as Key)}</b><span className="text-xs bg-white/10 rounded-full px-2">{col.length}</span></div>
+            <div className="space-y-2 min-h-24 rounded-2xl bg-white/[.03] p-2">
+              {col.map(o => { const n = next(o); return (
+                <div key={o.id} className="card p-3 text-sm cursor-pointer hover:border-gold transition" onClick={() => setOpenId(o.id)}>
+                  <div className="flex justify-between"><b dir="ltr">{o.code}</b><b className="text-gold">{money(o.totalUSD, settings.usdToSyp)}</b></div>
+                  <div className="text-slate-400 mt-1">{o.customerName}</div>
+                  <div className="flex items-center justify-between mt-2">
+                    <span className={`text-[11px] px-2 py-0.5 rounded-full ${o.payment.status === "confirmed" ? "bg-emerald-500/20 text-emerald-300" : o.payment.status === "pending" ? "bg-yellow/20 text-yellow" : "bg-white/10 text-slate-400"}`}>{t(`p_${o.payment.status}` as Key)}</span>
+                    {n && <button className="text-xs text-gold" onClick={e => { e.stopPropagation(); moveStage(o, n, by); }}>{t(`s_${n}` as Key)} →</button>}
+                  </div>
+                </div>); })}
             </div>
-          )}
+          </div>); })}
+      </div>
+      {open && (
+        <div className="fixed inset-0 bg-black/70 z-50 grid place-items-center p-4" onClick={() => setOpenId(null)}>
+          <div className="card p-5 w-full max-w-3xl max-h-[90vh] overflow-auto space-y-5" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center"><h2 className="display text-2xl" dir="ltr">{open.code}</h2><button onClick={() => setOpenId(null)} className="text-slate-400">✕</button></div>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2 text-sm">
+                <div>👤 {open.customerName} · <a dir="ltr" className="text-gold" href={`tel:${open.phone}`}>{open.phone}</a></div><div>📍 {open.address}</div>{open.designFile && <div>📎 {open.designFile}</div>}
+                {open.items.map((i, n) => { const p = products.find(x => x.id === i.productId); return <div key={n} className="bg-white/5 rounded-xl p-3"><b>{p ? pick(p) : i.name} × {i.qty}</b>{i.customSize && <div>📐 {i.customSize}</div>}<div className="text-slate-400">{Object.entries(i.options).map(([k, v]) => `${k}: ${v}`).join(" • ")}</div>{i.notes && <div className="italic text-slate-300">“{i.notes}”</div>}</div>; })}
+                <div className="text-lg font-bold">{money(open.totalUSD, settings.usdToSyp)} · {t(`p_${open.payment.status}` as Key)}</div>
+                {open.payment.status !== "confirmed" && (role === "admin" || role === "accountant") && <button className="btn btn-ghost !py-1 text-xs" onClick={() => markPaidManually(open, by)}>💵 {t("pay")} (cash)</button>}
+              </div>
+              <div className="space-y-4"><Timeline order={open} />
+                <div className="flex gap-2 flex-wrap">{COLS.filter(s => s !== open.stage && STAGE_ROLE[s].includes(role)).map(s => <button key={s} className="btn btn-ghost !py-1 text-xs" onClick={() => moveStage(open, s, by)}>→ {t(`s_${s}` as Key)}</button>)}</div></div>
+            </div>
+          </div>
         </div>
-      ))}
+      )}
     </Page>
   );
 }
