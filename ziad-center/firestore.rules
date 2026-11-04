@@ -1,0 +1,30 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+    function signedIn() { return request.auth != null; }
+    function role() { return get(/databases/$(db)/documents/users/$(request.auth.uid)).data.role; }
+    function staff() { return signedIn() && role() in ['admin','designer','press','packing','accountant']; }
+    function admin() { return signedIn() && role() == 'admin'; }
+
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || admin());
+      // الزبون ينشئ ملفه كـ customer فقط؛ تغيير الدور للمدير فقط
+      allow create: if signedIn() && request.auth.uid == uid && request.resource.data.role == 'customer';
+      allow update: if admin();
+    }
+    match /settings/{d} { allow read: if true; allow write: if admin(); }
+    match /products/{d} { allow read: if true; allow write: if admin(); }
+
+    match /orders/{id} {
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid || staff());
+      // الزبون: ينشئ طلباً غير مدفوع في مرحلة new فقط. حالة الدفع يغيّرها الـ Worker (حساب الخدمة يتجاوز القواعد)
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+        && request.resource.data.stage == 'new' && request.resource.data.payment.status == 'unpaid';
+      allow update: if staff();
+    }
+    match /ledger/{id} {
+      allow read: if signedIn() && role() in ['admin','accountant'];
+      allow write: if signedIn() && role() in ['admin','accountant'];
+    }
+  }
+}
