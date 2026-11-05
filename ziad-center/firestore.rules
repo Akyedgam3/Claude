@@ -5,6 +5,7 @@ service cloud.firestore {
     function role() { return get(/databases/$(db)/documents/users/$(request.auth.uid)).data.role; }
     function staff() { return signedIn() && role() in ['admin','designer','press','packing','accountant']; }
     function admin() { return signedIn() && role() == 'admin'; }
+    function fin() { return signedIn() && role() in ['admin','accountant']; }
 
     match /users/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || admin());
@@ -26,7 +27,18 @@ service cloud.firestore {
       // الزبون: ينشئ طلباً غير مدفوع في مرحلة new فقط. حالة الدفع يغيّرها الـ Worker (حساب الخدمة يتجاوز القواعد)
       allow create: if signedIn() && request.resource.data.uid == request.auth.uid
         && request.resource.data.stage == 'new' && request.resource.data.payment.status == 'unpaid';
-      allow update: if staff();
+      // الموظف يحرّك المراحل فقط؛ الدفع للمدير/المحاسب؛ والزبون يرفع إيصاله (unpaid -> pending) فقط
+      allow update: if fin()
+        || (staff() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stage', 'history']))
+        || (signedIn() && resource.data.uid == request.auth.uid && resource.data.payment.status == 'unpaid'
+            && request.resource.data.payment.status == 'pending'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['payment', 'history']));
+    }
+    // إيصال الدفع (صورة مضغوطة): مستند واحد لكل طلب، ينشئه صاحب الطلب فقط
+    match /receipts/{id} {
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid || staff());
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+        && get(/databases/$(db)/documents/orders/$(id)).data.uid == request.auth.uid;
     }
     match /ledger/{id} {
       allow read: if signedIn() && role() in ['admin','accountant'];

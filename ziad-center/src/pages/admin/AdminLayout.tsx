@@ -17,6 +17,7 @@ export default function AdminLayout() {
   if (!ready) return <div className="p-10"><div className="skeleton h-40" /></div>;
   if (!user) return <Navigate to="/login?next=/admin" />;
   if (!isStaff) return <div className="p-16 text-center text-slate-600">{t("needAdmin")}</div>;
+  const pending = rows.filter(o => o.payment.status === "pending").length;
   const full = role === "admin", acct = role === "admin" || role === "accountant";
   const items = [["", "dash", t("dash"), true], ["orders", "orders", t("orders"), true], ["accounting", "money", t("accounting"), acct], ["products", "box", t("products"), full], ["settings", "gear", t("settings"), full]] as const;
   const link = ({ isActive }: { isActive: boolean }) => `flex items-center gap-2 px-3 py-2 rounded-xl text-sm whitespace-nowrap ${isActive ? "bg-ink text-white font-bold" : "text-slate-600 hover:text-ink"}`;
@@ -24,7 +25,7 @@ export default function AdminLayout() {
     <div className="min-h-screen md:flex">
       <aside className="md:w-56 border-b md:border-b-0 md:border-e border-line p-3 md:p-4 flex md:flex-col gap-1 overflow-x-auto md:sticky md:top-0 md:h-screen">
         <Link to="/" className="hidden md:flex items-center gap-2 font-extrabold mb-4"><Logo size={32} /><span className="grad-text">{t("brand")}</span></Link>
-        {items.filter(i => i[3]).map(([to, ic, label]) => <NavLink key={to} to={`/admin/${to}`} end={to === ""} className={link}><Icon n={ic} size={18} /> {label}</NavLink>)}
+        {items.filter(i => i[3]).map(([to, ic, label]) => <NavLink key={to} to={`/admin/${to}`} end={to === ""} className={link}><Icon n={ic} size={18} /> {label}{to === "orders" && pending > 0 && <span className="ms-auto bg-[var(--color-cta)] text-ink text-xs font-bold rounded-full min-w-5 h-5 px-1.5 grid place-items-center">{pending}</span>}</NavLink>)}
         <button className="btn btn-ghost !py-1 text-xs md:mt-auto" onClick={() => setLang(lang === "ar" ? "en" : "ar")}>{lang === "ar" ? "EN" : "عربي"}</button>
       </aside>
       <main className="flex-1 p-4 md:p-8 min-w-0">
