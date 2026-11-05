@@ -66,8 +66,8 @@ async function receipt(env: Env, req: Request) {
   if (!file || !orderId || file.size > 8_000_000) return json(env, "bad request", 400);
   const o: any = await getDoc(env, `orders/${orderId}`);
   if (!o || o.uid !== uid) return json(env, "forbidden", 403);
-  if (o.payment.status !== "unpaid") return json(env, "already submitted", 409);
-  await patchDoc(env, `orders/${orderId}`, { payment: { status: "pending", receiptAt: Date.now() }, history: [...o.history, { stage: "payment", at: Date.now(), by: "customer", note: "receipt" }] });
+  // الموقع يحفظ الإيصال والحالة (pending) في Firestore بنفسه؛ هنا فقط إشعار تلغرام بأزرار تأكيد/رفض
+  if (o.payment.status !== "pending") return json(env, "not pending", 409);
   await sendFile(env, file, `<b>إيصال دفع جديد</b>\nالطلب: <code>${esc(o.code)}</code>\nالزبون: ${esc(o.customerName)} (${esc(o.phone)})\nالمبلغ: <b>$${o.totalUSD}</b> ≈ ${Math.round(o.totalUSD * o.rate).toLocaleString("en-US")} ل.س`,
     { inline_keyboard: [[{ text: "تأكيد", callback_data: `ok:${orderId}` }, { text: "رفض", callback_data: `no:${orderId}` }]] });
   return json(env, { ok: true });

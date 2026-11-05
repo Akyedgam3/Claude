@@ -19,7 +19,7 @@ export default function OrderView() {
   const pay = o.payment.status;
   const send = async (f?: File) => {
     if (!f) return; setBusy(true); setErr("");
-    try { await uploadReceipt(o.id, f); } catch (e) { setErr((e as Error).message); }
+    try { await uploadReceipt(o, f); } catch (e) { setErr((e as Error).message); }
     setBusy(false);
   };
   return (
@@ -34,7 +34,7 @@ export default function OrderView() {
           {settings.shamcashAccount && <p className="text-sm">{t("account")}: <b dir="ltr" className="select-all">{settings.shamcashAccount}</b></p>}
           <div className="text-2xl font-extrabold">{money(o.totalUSD, settings.usdToSyp)} <span className="text-sm text-slate-600" dir="ltr">(${o.totalUSD})</span></div>
           <p className="text-sm text-slate-600">2) {t("payStep2")}</p>
-          <input ref={input} type="file" accept="image/*,.pdf" hidden onChange={e => send(e.target.files?.[0])} />
+          <input ref={input} type="file" accept="image/*" hidden onChange={e => send(e.target.files?.[0])} />
           <button className="btn btn-primary" disabled={busy} onClick={() => input.current?.click()}>{busy ? t("sending") : <><Icon n="upload" size={18} /> {t("uploadReceipt")}</>}</button>
           {err && <p className="text-rose-400 text-sm">{err}</p>}
         </div>

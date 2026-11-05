@@ -1,10 +1,10 @@
 // رسومات منتجات (SVG) بدل الإيموجي — تُستبدل بصور حقيقية لاحقاً عبر حقل image بالمنتج
-const G = "#e9b85b", C = "#f08a4b", P = "#f3ecdf", K = "#151517", S = "rgba(0,0,0,.35)";
+const G = "#50c4c8", C = "#3263db", P = "#f5f4f1", K = "#0d244c", S = "rgba(0,0,0,.35)";
 const Defs = ({ id }: { id: string }) => (
   <defs>
-    <linearGradient id={`g${id}`} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#f6e7c1" /><stop offset=".5" stopColor={G} /><stop offset="1" stopColor={C} /></linearGradient>
+    <linearGradient id={`g${id}`} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#9fe0e2" /><stop offset=".5" stopColor={G} /><stop offset="1" stopColor={C} /></linearGradient>
     <linearGradient id={`p${id}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fffaf0" /><stop offset="1" stopColor="#e4dac6" /></linearGradient>
-    <linearGradient id={`d${id}`} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#26262b" /><stop offset="1" stopColor="#0f0f11" /></linearGradient>
+    <linearGradient id={`d${id}`} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#1d3d7a" /><stop offset="1" stopColor="#0d244c" /></linearGradient>
     <filter id={`s${id}`} x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="10" stdDeviation="9" floodColor="#000" floodOpacity=".55" /></filter>
   </defs>
 );

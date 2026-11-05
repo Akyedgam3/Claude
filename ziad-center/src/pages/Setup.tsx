@@ -12,7 +12,7 @@ import { Page } from "../components/Page";
 export default function Setup() {
   const { user, ready, role } = useAuth(); const { t } = useI18n();
   const [free, setFree] = useState<boolean | null>(null); const [busy, setBusy] = useState(false); const [err, setErr] = useState(""); const [done, setDone] = useState(false);
-  useEffect(() => { getDoc(doc(db, "config", "owner")).then(s => setFree(!s.exists())).catch(() => setFree(false)); }, []);
+  useEffect(() => { getDoc(doc(db, "config", "owner")).then(s => setFree(!s.exists())).catch(e => { setFree(null); setErr((e as Error).message); }); }, []);
   if (ready && !user) return <Navigate to="/login?next=/setup" />;
   const claim = async () => {
     if (!user) return; setBusy(true); setErr("");
@@ -31,7 +31,7 @@ export default function Setup() {
   return (
     <Page className="max-w-md mx-auto px-4 pt-20 text-center space-y-5">
       <h1 className="display text-4xl">{t("setupTitle")}</h1>
-      {free === null && <div className="skeleton h-12" />}
+      {free === null && !err && <div className="skeleton h-12" />}
       {free && !done && <><p className="text-slate-600">{t("setupDesc")}</p><button className="btn btn-primary" disabled={busy} onClick={claim}>{busy ? t("sending") : t("setupBtn")}</button></>}
       {(done || (free === false && role === "admin")) && <Link to="/admin/settings" className="btn btn-primary">{t("admin")} →</Link>}
       {free === false && role !== "admin" && !done && <p className="text-slate-600">{t("setupDone")}</p>}
