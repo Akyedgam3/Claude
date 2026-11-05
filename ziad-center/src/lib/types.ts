@@ -40,9 +40,10 @@ export interface Settings {
   phone: string; whatsapp: string; address: string;
   email: string; aboutAr: string; aboutEn: string; shippingAr: string; shippingEn: string;
   facebook: string; instagram: string; tiktok: string; telegram: string;
+  markets: string; // سطر لكل سوق: المدينة | الهاتف | المسؤول
 }
 export const DEFAULT_SETTINGS: Settings = {
   usdToSyp: 13000, shamcashQr: "", shamcashAccount: "", phone: "", whatsapp: "", address: "",
   email: "", aboutAr: "", aboutEn: "", shippingAr: "", shippingEn: "",
-  facebook: "", instagram: "", tiktok: "", telegram: "",
+  facebook: "", instagram: "", tiktok: "", telegram: "", markets: "",
 };

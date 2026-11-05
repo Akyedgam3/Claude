@@ -22,46 +22,78 @@ export default function Layout() {
   const nav = useNavigate();
   const [mega, setMega] = useState(false);
   const [q, setQ] = useState("");
+  const [acct, setAcct] = useState(false);
+  const [menu, setMenu] = useState(false);
   const { favs } = useExtras();
   const [top, setTop] = useState(false);
   useEffect(() => { const f = () => setTop(window.scrollY > 900); addEventListener("scroll", f, { passive: true }); return () => removeEventListener("scroll", f); }, []);
   const quote = settings.whatsapp ? waLink(settings.whatsapp, tr("مرحباً، أريد عرض سعر من زياد سنتر", "Hello, I'd like a quote from Ziad Center")) : "#/contact";
-  const link = ({ isActive }: { isActive: boolean }) => `px-2 py-1 text-[15px] whitespace-nowrap border-b-2 transition ${isActive ? "border-[var(--color-cta)] text-ink" : "border-transparent text-ink/80 hover:text-ink"}`;
-  const pages: [string, string][] = [["/offers", tr("العروض", "Offers")], ["/tips", tr("نصائح الطباعة", "Print tips")], ["/shipping", tr("الشحن", "Shipping")], ["/about", tr("من نحن", "About")], ["/contact", tr("تواصل معنا", "Contact")]];
+  const link = ({ isActive }: { isActive: boolean }) => `grid place-items-center h-[84px] text-[15px] whitespace-nowrap border-b-2 transition ${isActive ? "border-[var(--color-cta)] text-ink" : "border-transparent text-ink hover:text-[var(--color-cta)]"}`;
+  const pages: [string, string][] = [["/offers", tr("العروض", "Offers")], ["/tips", tr("نصائح الطباعة", "Print tips")], ["/markets", tr("الأسواق", "Markets")], ["/shipping", tr("الشحن", "Shipping")], ["/about", tr("من نحن", "About")], ["/contact", tr("تواصل معنا", "Contact")]];
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-line" onMouseLeave={() => setMega(false)}>
-        <div className="max-w-6xl mx-auto px-4 h-[72px] flex items-center gap-2 sm:gap-4">
-          <Link to="/" className="flex items-center gap-2 font-extrabold text-lg text-ink me-auto lg:me-2"><Logo size={38} /><span className="leading-tight whitespace-nowrap">{t("brand")}<span className="hidden sm:block text-[10px] font-medium tracking-[.2em] text-slate-600">PRINTING HOUSE</span></span></Link>
-          <nav className="hidden lg:flex items-center gap-1 xl:gap-3 flex-1 min-w-0">
-            <button className={`flex items-center gap-1 px-2 py-1 text-[15px] ${mega ? "text-ink" : "text-ink/80"}`} onMouseEnter={() => setMega(true)} onClick={() => setMega(m => !m)} aria-expanded={mega}>
+      <header className="sticky top-0 z-40 bg-white border-b border-line" onMouseLeave={() => setMega(false)}>
+        <div className="max-w-[1320px] mx-auto px-4 lg:px-8 h-[84px] flex items-center gap-3 xl:gap-6">
+          <Link to="/" className="flex items-center gap-2 text-ink shrink-0 me-auto xl:me-0" aria-label={t("brand")}>
+            <Logo size={40} /><span className="leading-none whitespace-nowrap"><b className="text-xl font-extrabold">{t("brand")}</b><span className="block mt-1 text-[9px] font-medium tracking-[.28em] text-slate-600">PRINTING HOUSE</span></span>
+          </Link>
+          <nav className="hidden xl:flex items-center gap-5 2xl:gap-7 shrink-0">
+            <button className={`flex items-center gap-1.5 text-[15px] h-[84px] border-b-2 ${mega ? "border-[var(--color-cta)] text-ink" : "border-transparent text-ink"}`} onMouseEnter={() => setMega(true)} onClick={() => setMega(m => !m)} aria-expanded={mega}>
               {tr("المنتجات", "Products")}<svg width="12" height="12" viewBox="0 0 24 24" aria-hidden className={`transition ${mega ? "rotate-180" : ""}`}><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" strokeWidth="2" /></svg>
             </button>
             {pages.map(([to, l]) => <NavLink key={to} to={to} className={link}>{l}</NavLink>)}
             {isStaff && <NavLink to="/admin" className={link}>{t("admin")}</NavLink>}
           </nav>
-          <form className="hidden 2xl:flex items-center gap-2 bg-[var(--color-paper)] rounded-full px-4 h-11 w-60 shrink-0 focus-within:ring-2 ring-[var(--color-cta)]" onSubmit={e => { e.preventDefault(); nav(`/services?q=${encodeURIComponent(q)}`); }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" strokeWidth="2" /><path d="M20 20l-4-4" stroke="currentColor" strokeWidth="2" /></svg>
-            <input value={q} onChange={e => setQ(e.target.value)} placeholder={tr("اسم المنتج أو الكود", "Product name or code")} aria-label={tr("بحث", "Search")} className="bg-transparent outline-none text-sm w-full" />
+          <form className="hidden 2xl:flex flex-1 min-w-[200px] max-w-[380px] items-center gap-2 bg-[#f3f1ec] rounded-full px-5 h-12 focus-within:ring-2 ring-[var(--color-cta)]" onSubmit={e => { e.preventDefault(); nav(`/services?q=${encodeURIComponent(q)}`); }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden className="text-slate-600 shrink-0"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" strokeWidth="2" /><path d="M20 20l-4-4" stroke="currentColor" strokeWidth="2" /></svg>
+            <input value={q} onChange={e => setQ(e.target.value)} placeholder={tr("اسم المنتج أو الكود", "Product name or code")} aria-label={tr("بحث", "Search")} className="bg-transparent outline-none text-[15px] w-full placeholder:text-slate-500" />
           </form>
-          <span className="hidden sm:block"><a href={quote} target={settings.whatsapp ? "_blank" : undefined} rel="noreferrer" className="btn btn-primary !min-h-11 !py-0 text-sm whitespace-nowrap">
-            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden><path d="M4 20l1.3-3.900A8 8 0 1 1 8 19.500z" fill="none" stroke="currentColor" strokeWidth="1.800" strokeLinejoin="round" /></svg>{tr("اطلب عرض سعر", "Get a quote")}
+          <span className="hidden sm:block shrink-0"><a href={quote} target={settings.whatsapp ? "_blank" : undefined} rel="noreferrer" className="btn btn-primary !min-h-12 !py-0 !px-6 text-[15px] whitespace-nowrap">
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden><path d="M4 20l1.300-3.900A8 8 0 1 1 8 19.500z" fill="none" stroke="currentColor" strokeWidth="1.800" strokeLinejoin="round" /><path d="M9 9.500c.300 2 2.500 4.200 4.500 4.500l1-1.200 1.800.8c-.200 1.200-1.200 1.900-2.300 1.800-3-.400-5.700-3.100-6.100-6.100-.100-1.100.6-2.100 1.800-2.300l.8 1.800z" fill="currentColor" /></svg>{tr("اطلب عرض سعر", "Get a quote")}
           </a></span>
-          <div className="flex items-center gap-1">
-            <button className="text-sm px-2 h-11 rounded-full hover:bg-ink/5" onClick={() => setLang(lang === "ar" ? "en" : "ar")} aria-label="Language">{lang === "ar" ? "EN" : "ع"}</button>
-            <button className="text-sm px-2 h-11 rounded-full hover:bg-ink/5" onClick={() => setCur(cur === "SYP" ? "USD" : "SYP")} aria-label="Currency">{cur === "SYP" ? "ل.س" : "$"}</button>
-            <Link to="/favorites" className="hidden sm:grid relative place-items-center w-11 h-11 rounded-full hover:bg-ink/5" aria-label={tr("المفضلة", "Favourites")}><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden><path d="M12 20s-7-4.400-7-10a4 4 0 0 1 7-2.600A4 4 0 0 1 19 10c0 5.600-7 10-7 10z" fill="none" stroke="currentColor" strokeWidth="1.800" strokeLinejoin="round" /></svg>{favs.length > 0 && <span className="absolute top-0 end-0 bg-rose-600 text-white text-[10px] font-bold rounded-full w-5 h-5 grid place-items-center">{favs.length}</span>}</Link>
-            <Link to="/cart" className="hidden sm:grid relative place-items-center w-11 h-11 rounded-full hover:bg-ink/5" aria-label={t("cart")}><Icon n="cart" />{items.length > 0 && <span className="absolute top-0 end-0 bg-[var(--color-cta)] text-white text-[10px] font-bold rounded-full w-5 h-5 grid place-items-center">{items.length}</span>}</Link>
-            {user ? <button className="hidden sm:grid place-items-center w-11 h-11 rounded-full hover:bg-ink/5" onClick={logout} title={t("logout")} aria-label={t("logout")}><Icon n="user" /></button>
-              : <Link to="/login" className="grid place-items-center w-11 h-11 rounded-full hover:bg-ink/5" aria-label={t("login")}><Icon n="user" /></Link>}
+          <div className="flex items-center gap-1 shrink-0">
+            <button className="xl:hidden grid place-items-center w-11 h-11 rounded-full hover:bg-ink/5" onClick={() => setMenu(m => !m)} aria-expanded={menu} aria-label={tr("القائمة", "Menu")}>
+              <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden><path d={menu ? "M6 6l12 12M18 6 6 18" : "M4 7h16M4 12h16M4 17h16"} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+            </button>
+            <button className="flex items-center gap-1.5 px-2 h-11 rounded-full hover:bg-ink/5 text-ink" onClick={() => setLang(lang === "ar" ? "en" : "ar")} aria-label={tr("تبديل اللغة", "Switch language")}>
+              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.800" /><path d="M3 12h18M12 3c3 3.500 3 14.500 0 18M12 3c-3 3.500-3 14.500 0 18" fill="none" stroke="currentColor" strokeWidth="1.500" /></svg>
+              <span className="text-[15px]">{lang === "ar" ? "EN" : "ع"}</span>
+            </button>
+            <Link to="/cart" className="relative grid place-items-center w-11 h-11 rounded-full hover:bg-ink/5" aria-label={t("cart")}><Icon n="cart" />{items.length > 0 && <span className="absolute top-0 end-0 bg-[var(--color-cta)] text-white text-[10px] font-bold rounded-full w-5 h-5 grid place-items-center">{items.length}</span>}</Link>
+            {/* قائمة الحساب: المفضلة، الطلبات، العملة، الدخول/الخروج */}
+            <div className="relative hidden sm:block">
+              <button className="relative grid place-items-center w-11 h-11 rounded-full hover:bg-ink/5" onClick={() => setAcct(a => !a)} aria-expanded={acct} aria-label={tr("حسابي", "My account")}><Icon n="user" />{favs.length > 0 && <span className="absolute top-1 end-1 w-2.5 h-2.5 rounded-full bg-rose-600" />}</button>
+              <AnimatePresence>{acct && (
+                <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="absolute end-0 top-12 w-56 bg-white border border-line rounded-2xl shadow-xl p-2 text-sm" onMouseLeave={() => setAcct(false)}>
+                  {user ? <div className="px-3 py-2 text-xs text-slate-600 truncate">{user.email}</div> : <Link to="/login" onClick={() => setAcct(false)} className="block px-3 py-2.5 rounded-xl hover:bg-ink/5 font-bold">{t("login")}</Link>}
+                  <Link to="/orders" onClick={() => setAcct(false)} className="block px-3 py-2.5 rounded-xl hover:bg-ink/5">{t("track")}</Link>
+                  <Link to="/favorites" onClick={() => setAcct(false)} className="flex justify-between px-3 py-2.5 rounded-xl hover:bg-ink/5">{tr("المفضلة", "Favourites")}{favs.length > 0 && <b className="text-rose-600">{favs.length}</b>}</Link>
+                  <button onClick={() => setCur(cur === "SYP" ? "USD" : "SYP")} className="w-full flex justify-between px-3 py-2.5 rounded-xl hover:bg-ink/5">{tr("العملة", "Currency")}<b>{cur === "SYP" ? "ل.س" : "$"}</b></button>
+                  {user && <button onClick={() => { setAcct(false); logout(); }} className="w-full text-start px-3 py-2.5 rounded-xl hover:bg-ink/5 text-rose-700">{t("logout")}</button>}
+                </motion.div>)}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
+        {/* قائمة الشاشات الأصغر */}
+        <AnimatePresence>{menu && (
+          <motion.nav initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="xl:hidden absolute inset-x-0 top-full bg-white border-b border-line shadow-xl" aria-label={tr("القائمة", "Menu")}>
+            <div className="max-w-[1320px] mx-auto px-4 py-4 grid sm:grid-cols-2 gap-1">
+              <form className="sm:col-span-2 flex items-center gap-2 bg-[#f3f1ec] rounded-full px-5 h-12 mb-2" onSubmit={e => { e.preventDefault(); setMenu(false); nav(`/services?q=${encodeURIComponent(q)}`); }}>
+                <input value={q} onChange={e => setQ(e.target.value)} placeholder={tr("اسم المنتج أو الكود", "Product name or code")} aria-label={tr("بحث", "Search")} className="bg-transparent outline-none text-[15px] w-full" />
+              </form>
+              {([["/services", tr("المنتجات", "Products")], ...pages] as [string, string][]).map(([to, l]) => <Link key={to} to={to} onClick={() => setMenu(false)} className="px-4 py-3 rounded-xl hover:bg-ink/5 text-ink font-medium">{l}</Link>)}
+              {isStaff && <Link to="/admin" onClick={() => setMenu(false)} className="px-4 py-3 rounded-xl hover:bg-ink/5 text-ink font-medium">{t("admin")}</Link>}
+              <a href={quote} target="_blank" rel="noreferrer" className="sm:hidden btn btn-primary mt-2">{tr("اطلب عرض سعر", "Get a quote")}</a>
+            </div>
+          </motion.nav>)}
+        </AnimatePresence>
         {/* قائمة المنتجات المنسدلة */}
         <AnimatePresence>
           {mega && (
             <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: .18 }} className="absolute inset-x-0 top-full bg-white border-b border-line shadow-xl">
-              <div className="max-w-6xl mx-auto px-4 py-6 grid grid-cols-4 gap-4">
+              <div className="max-w-[1320px] mx-auto px-4 lg:px-8 py-6 grid grid-cols-4 gap-4">
                 {products.map(p => (
                   <Link key={p.id} to={`/services/${p.id}`} onClick={() => setMega(false)} className="flex items-center gap-3 rounded-2xl p-2 hover:bg-[var(--color-paper)]">
                     <span className="w-16 h-12 rounded-xl grid place-items-center overflow-hidden" style={{ background: blockOf(p.id) }}>{p.image ? <img src={p.image} alt="" className="w-full h-full object-cover" /> : hasArt(p.id) ? <Art id={p.id} className="w-full h-full" /> : <Icon n="box" />}</span>
