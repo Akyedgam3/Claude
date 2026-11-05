@@ -6,6 +6,7 @@ import { useCart } from "../lib/cart";
 import { useData } from "../lib/data";
 import { createOrder, uploadDesign } from "../lib/api";
 import { Page } from "../components/Page";
+import Icon from "../components/Icon";
 
 export default function Cart() {
   const { t, pick, money, lang } = useI18n(); const { user } = useAuth(); const cart = useCart(); const { settings, products } = useData(); const nav = useNavigate();
@@ -13,7 +14,7 @@ export default function Cart() {
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false); const [err, setErr] = useState("");
 
-  if (!cart.items.length) return <Page className="text-center py-24"><div className="text-6xl mb-4">🛒</div><p className="text-slate-400 mb-6">{t("empty")}</p><Link to="/services" className="btn btn-primary">{t("browse")}</Link></Page>;
+  if (!cart.items.length) return <Page className="text-center py-24"><Icon n="cart" size={56} className="mx-auto mb-4 text-gold" /><p className="text-slate-400 mb-6">{t("empty")}</p><Link to="/services" className="btn btn-primary">{t("browse")}</Link></Page>;
   const submit = async () => {
     if (!user) return nav("/login?next=/cart");
     if (!f.name || !f.phone || !f.address) return setErr(t("required"));

@@ -6,6 +6,7 @@ import { moveStage, markPaidManually } from "../../lib/api";
 import { STAGES, STAGE_ROLE, type Order, type Stage } from "../../lib/types";
 import { Page } from "../../components/Page";
 import Timeline from "../../components/Timeline";
+import Icon from "../../components/Icon";
 
 const COLS: Stage[] = [...STAGES, "cancelled"];
 export default function AdminOrders({ orders }: { orders: Order[] }) {
@@ -38,13 +39,13 @@ export default function AdminOrders({ orders }: { orders: Order[] }) {
       {open && (
         <div className="fixed inset-0 bg-black/70 z-50 grid place-items-center p-4" onClick={() => setOpenId(null)}>
           <div className="card p-5 w-full max-w-3xl max-h-[90vh] overflow-auto space-y-5" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center"><h2 className="display text-2xl" dir="ltr">{open.code}</h2><button onClick={() => setOpenId(null)} className="text-slate-400">✕</button></div>
+            <div className="flex justify-between items-center"><h2 className="display text-2xl" dir="ltr">{open.code}</h2><button onClick={() => setOpenId(null)} className="text-slate-400 p-2" aria-label="Close"><Icon n="close" /></button></div>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2 text-sm">
-                <div>👤 {open.customerName} · <a dir="ltr" className="text-gold" href={`tel:${open.phone}`}>{open.phone}</a></div><div>📍 {open.address}</div>{open.designFile && <div>📎 {open.designFile}</div>}
-                {open.items.map((i, n) => { const p = products.find(x => x.id === i.productId); return <div key={n} className="bg-white/5 rounded-xl p-3"><b>{p ? pick(p) : i.name} × {i.qty}</b>{i.customSize && <div>📐 {i.customSize}</div>}<div className="text-slate-400">{Object.entries(i.options).map(([k, v]) => `${k}: ${v}`).join(" • ")}</div>{i.notes && <div className="italic text-slate-300">“{i.notes}”</div>}</div>; })}
+                <div><b>{t("customer")}:</b> {open.customerName} · <a dir="ltr" className="text-gold" href={`tel:${open.phone}`}>{open.phone}</a></div><div><b>{t("address")}:</b> {open.address}</div>{open.designFile && <div><b>{t("attach")}:</b> {open.designFile}</div>}
+                {open.items.map((i, n) => { const p = products.find(x => x.id === i.productId); return <div key={n} className="bg-white/5 rounded-xl p-3"><b>{p ? pick(p) : i.name} × {i.qty}</b>{i.customSize && <div>{i.customSize}</div>}<div className="text-slate-400">{Object.entries(i.options).map(([k, v]) => `${k}: ${v}`).join(" • ")}</div>{i.notes && <div className="italic text-slate-300">“{i.notes}”</div>}</div>; })}
                 <div className="text-lg font-bold">{money(open.totalUSD, settings.usdToSyp)} · {t(`p_${open.payment.status}` as Key)}</div>
-                {open.payment.status !== "confirmed" && (role === "admin" || role === "accountant") && <button className="btn btn-ghost !py-1 text-xs" onClick={() => markPaidManually(open, by)}>💵 {t("pay")} (cash)</button>}
+                {open.payment.status !== "confirmed" && (role === "admin" || role === "accountant") && <button className="btn btn-ghost !py-1 text-xs" onClick={() => markPaidManually(open, by)}>{t("pay")} (cash)</button>}
               </div>
               <div className="space-y-4"><Timeline order={open} />
                 <div className="flex gap-2 flex-wrap">{COLS.filter(s => s !== open.stage && STAGE_ROLE[s].includes(role)).map(s => <button key={s} className="btn btn-ghost !py-1 text-xs" onClick={() => moveStage(open, s, by)}>→ {t(`s_${s}` as Key)}</button>)}</div></div>

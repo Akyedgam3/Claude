@@ -6,6 +6,8 @@ import { useData } from "../lib/data";
 import { useCart } from "../lib/cart";
 import { unitPrice } from "../lib/catalog";
 import { Page } from "../components/Page";
+import Art, { hasArt } from "../components/Art";
+import Icon from "../components/Icon";
 
 export default function ProductPage() {
   const { id } = useParams(); const nav = useNavigate();
@@ -24,8 +26,8 @@ export default function ProductPage() {
   };
   return (
     <Page className="max-w-5xl mx-auto px-4 pt-10 grid md:grid-cols-2 gap-8">
-      <motion.div initial={{ scale: .9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="card h-72 md:h-auto grid place-items-center text-9xl" style={{ background: `radial-gradient(circle at 30% 20%, hsl(${30 + p.hue % 25} 85% 55% / .35), transparent 60%), radial-gradient(circle at 80% 90%, hsl(${10 + p.hue % 20} 90% 55% / .2), transparent 55%), #151517` }}>
-        <motion.span animate={{ rotate: [-4, 4, -4], y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 5 }}>{p.icon}</motion.span>
+      <motion.div initial={{ scale: .9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="card h-80 md:h-auto min-h-80 grid place-items-center overflow-hidden" style={{ background: `radial-gradient(circle at 30% 20%, hsl(${30 + p.hue % 25} 85% 55% / .35), transparent 60%), radial-gradient(circle at 80% 90%, hsl(${10 + p.hue % 20} 90% 55% / .2), transparent 55%), #151517` }}>
+        <motion.div className="w-full h-full grid place-items-center" animate={{ y: [0, -8, 0] }} transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}>{p.image ? <img src={p.image} alt={pick(p)} className="w-full h-full object-cover rounded-[inherit]" /> : hasArt(p.id) ? <Art id={p.id} className="w-full max-h-[420px]" /> : <Icon n="box" size={140} className="text-gold" />}</motion.div>
       </motion.div>
       <div className="space-y-5">
         <div><h1 className="text-3xl font-extrabold">{pick(p)}</h1><p className="text-slate-400 mt-1">{pick({ ar: p.descAr, en: p.descEn })}</p></div>
@@ -42,7 +44,7 @@ export default function ProductPage() {
         <div><label className="label">{t("notes")}</label><textarea className="input" rows={3} value={notes} onChange={e => setNotes(e.target.value)} /></div>
         <div className="card p-4 space-y-1">
           <div className="flex justify-between text-sm text-slate-400"><span>{t("unit")}</span><span>{money(unit, settings.usdToSyp)}</span></div>
-          {sale > 0 && <div className="flex justify-between text-sm text-rose-400"><span>⚡ {t("flash")}</span><span>-{Math.round(sale * 100)}%</span></div>}
+          {sale > 0 && <div className="flex justify-between text-sm text-rose-400"><span className="flex items-center gap-1"><Icon n="bolt" size={16} /> {t("flash")}</span><span>-{Math.round(sale * 100)}%</span></div>}
           {disc > 0 && <div className="flex justify-between text-sm text-emerald-400"><span>{t("discount")}</span><span>-{disc * 100}%</span></div>}
           <div className="flex justify-between text-xl font-extrabold"><span>{t("total")}</span><motion.span key={total} initial={{ scale: 1.2, color: "#e9b85b" }} animate={{ scale: 1, color: "#fff" }}>{money(total, settings.usdToSyp)}</motion.span></div>
         </div>

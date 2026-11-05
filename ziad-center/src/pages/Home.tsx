@@ -6,6 +6,7 @@ import { useData } from "../lib/data";
 import { Page, Reveal } from "../components/Page";
 import ProductCard from "../components/ProductCard";
 import Icon from "../components/Icon";
+import Art, { hasArt } from "../components/Art";
 
 function Countdown({ to }: { to: number }) {
   const { t } = useI18n(); const [now, setNow] = useState(Date.now());
@@ -20,7 +21,7 @@ export default function Home() {
   const { scrollY } = useScroll(); const y = useTransform(scrollY, [0, 700], [0, 140]);
   const flash = products.filter(p => p.sale && p.sale.ends > Date.now());
   const steps = [["01", t("st1"), t("st1d")], ["02", t("st2"), t("st2d")], ["03", t("st3"), t("st3d")], ["04", t("st4"), t("st4d")]];
-  const names = [...products, ...products].map((p, i) => <span key={i} className="display text-3xl md:text-5xl px-6 whitespace-nowrap text-white/15">{p.icon} {pick(p)}</span>);
+  const names = [...products, ...products].map((p, i) => <span key={i} className="display text-3xl md:text-5xl px-8 whitespace-nowrap text-white/15 after:content-['•'] after:ms-8 after:text-gold/40">{pick(p)}</span>);
   return (
     <Page>
       <section className="relative overflow-hidden grain">
@@ -39,9 +40,10 @@ export default function Home() {
           </div>
           <div className="lg:col-span-2 grid grid-cols-2 gap-3">
             {products.slice(0, 4).map((p, i) => (
-              <motion.div key={p.id} initial={{ opacity: 0, scale: .85 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: .3 + i * .1 }} className={i % 3 === 0 ? "translate-y-6" : ""}>
-                <Link to={`/services/${p.id}`} className="card aspect-square grid place-items-center text-6xl hover:border-gold transition group">
-                  <span className="group-hover:scale-125 transition-transform duration-500">{p.icon}</span>
+              <motion.div key={p.id} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .3 + i * .12, duration: .6 }} className={i % 2 ? "translate-y-8" : ""}>
+                <Link to={`/services/${p.id}`} aria-label={pick(p)} className="card aspect-[4/3] grid place-items-center hover:border-gold transition group overflow-hidden relative">
+                  {p.image ? <img src={p.image} alt="" className="absolute inset-0 w-full h-full object-cover" /> : hasArt(p.id) ? <Art id={p.id} className="w-full h-full p-1 group-hover:scale-110 transition-transform duration-500" /> : <Icon n="box" size={56} className="text-gold" />}
+                  <span className="absolute bottom-2 start-3 text-xs text-slate-300">{pick(p)}</span>
                 </Link>
               </motion.div>
             ))}

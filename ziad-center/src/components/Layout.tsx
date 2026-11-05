@@ -37,7 +37,7 @@ export default function Layout() {
       </nav>
       <footer className="border-t border-line mt-20 py-8 text-center text-sm text-slate-400">
         <div className="flex justify-center gap-4 mb-2">
-          {settings.phone && <a href={`tel:${settings.phone}`} className="hover:text-white">📞 {settings.phone}</a>}
+          {settings.phone && <a href={`tel:${settings.phone}`} className="hover:text-white">{settings.phone}</a>}
           {settings.whatsapp && <a href={`https://wa.me/${settings.whatsapp.replace(/\D/g, "")}`} className="hover:text-white">WhatsApp</a>}
         </div>
         © {new Date().getFullYear()} {t("brand")} — {t("footer")}

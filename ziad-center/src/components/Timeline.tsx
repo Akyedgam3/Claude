@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { useI18n, type Key } from "../lib/i18n";
+import Icon from "./Icon";
 import { STAGES, type Order } from "../lib/types";
 
 export default function Timeline({ order }: { order: Order }) {
@@ -14,7 +15,7 @@ export default function Timeline({ order }: { order: Order }) {
           return (
             <div key={s} className="flex-1 flex flex-col items-center relative">
               {i > 0 && <div className="absolute top-4 end-1/2 w-full h-0.5 bg-line"><motion.div className="h-full bg-gradient-to-r from-gold to-magenta" initial={{ width: 0 }} animate={{ width: done ? "100%" : 0 }} transition={{ duration: .6, delay: i * .1 }} /></div>}
-              <motion.div initial={{ scale: .6 }} animate={{ scale: i === idx && !cancelled ? 1.2 : 1 }} className={`relative z-10 w-8 h-8 rounded-full grid place-items-center text-sm font-bold border-2 ${done ? "bg-gold border-gold text-ink" : "bg-ink border-line text-slate-400"}`}>{done ? "✓" : i + 1}</motion.div>
+              <motion.div initial={{ scale: .6 }} animate={{ scale: i === idx && !cancelled ? 1.2 : 1 }} className={`relative z-10 w-8 h-8 rounded-full grid place-items-center text-sm font-bold border-2 ${done ? "bg-gold border-gold text-ink" : "bg-ink border-line text-slate-400"}`}>{done ? <Icon n="check" size={16} /> : i + 1}</motion.div>
               <span className={`text-[11px] sm:text-xs mt-2 text-center ${done ? "text-white" : "text-slate-400"}`}>{t(`s_${s}` as Key)}</span>
             </div>
           );

@@ -2,7 +2,7 @@
 // Cloudflare Worker (مجاني): يربط الموقع ↔ بوت تلغرام ↔ Firestore بدون Cloud Functions.
 interface Env { FB_PROJECT_ID: string; FB_API_KEY: string; ALLOWED_ORIGIN: string; ADMIN_CHAT_IDS: string; TG_BOT_TOKEN: string; TG_WEBHOOK_SECRET: string; SA_JSON: string }
 const MSG_REJECT = "تم رفض طلبك، سيتم إعادة أموالك في أقرب وقت";
-const MSG_OK = "تم تأكيد الدفع ✅";
+const MSG_OK = "تم تأكيد الدفع";
 
 const cors = (env: Env) => ({ "Access-Control-Allow-Origin": env.ALLOWED_ORIGIN, "Access-Control-Allow-Headers": "Authorization,Content-Type", "Access-Control-Allow-Methods": "POST,OPTIONS" });
 const json = (env: Env, d: unknown, s = 200) => new Response(JSON.stringify(d), { status: s, headers: { "Content-Type": "application/json", ...cors(env) } });
@@ -68,14 +68,14 @@ async function receipt(env: Env, req: Request) {
   if (!o || o.uid !== uid) return json(env, "forbidden", 403);
   if (o.payment.status !== "unpaid") return json(env, "already submitted", 409);
   await patchDoc(env, `orders/${orderId}`, { payment: { status: "pending", receiptAt: Date.now() }, history: [...o.history, { stage: "payment", at: Date.now(), by: "customer", note: "receipt" }] });
-  await sendFile(env, file, `🧾 <b>إيصال دفع جديد</b>\nالطلب: <code>${esc(o.code)}</code>\nالزبون: ${esc(o.customerName)} (${esc(o.phone)})\nالمبلغ: <b>$${o.totalUSD}</b> ≈ ${Math.round(o.totalUSD * o.rate).toLocaleString("en-US")} ل.س`,
-    { inline_keyboard: [[{ text: "✅ تأكيد", callback_data: `ok:${orderId}` }, { text: "❌ رفض", callback_data: `no:${orderId}` }]] });
+  await sendFile(env, file, `<b>إيصال دفع جديد</b>\nالطلب: <code>${esc(o.code)}</code>\nالزبون: ${esc(o.customerName)} (${esc(o.phone)})\nالمبلغ: <b>$${o.totalUSD}</b> ≈ ${Math.round(o.totalUSD * o.rate).toLocaleString("en-US")} ل.س`,
+    { inline_keyboard: [[{ text: "تأكيد", callback_data: `ok:${orderId}` }, { text: "رفض", callback_data: `no:${orderId}` }]] });
   return json(env, { ok: true });
 }
 async function design(env: Env, req: Request) {
   const uid = await verifyUser(env, req); if (!uid) return json(env, "unauthorized", 401);
   const file = (await req.formData()).get("file") as File | null; if (!file || file.size > 15_000_000) return json(env, "bad request", 400);
-  await sendFile(env, file, `📎 ملف تصميم من زبون (uid: <code>${uid.slice(0, 8)}</code>) — ${esc(file.name)}`);
+  await sendFile(env, file, `ملف تصميم من زبون (uid: <code>${uid.slice(0, 8)}</code>) — ${esc(file.name)}`);
   return json(env, { ok: true, name: file.name });
 }
 async function webhook(env: Env, req: Request) {
@@ -95,7 +95,7 @@ async function webhook(env: Env, req: Request) {
     await patchDoc(env, `orders/${orderId}`, { stage: "cancelled", payment: { status: "rejected", receiptAt: o.payment.receiptAt, rejectReason: MSG_REJECT }, history: [...o.history, { stage: "payment", at: now, by, note: MSG_REJECT }, { stage: "cancelled", at: now, by }] });
   }
   await answer(act === "ok" ? "تم التأكيد" : "تم الرفض");
-  await tg(env, "editMessageReplyMarkup", JSON.stringify({ chat_id: cb.message.chat.id, message_id: cb.message.message_id, reply_markup: { inline_keyboard: [[{ text: act === "ok" ? "✅ تم التأكيد" : "❌ تم الرفض", callback_data: "done" }]] } }), true);
+  await tg(env, "editMessageReplyMarkup", JSON.stringify({ chat_id: cb.message.chat.id, message_id: cb.message.message_id, reply_markup: { inline_keyboard: [[{ text: act === "ok" ? "تم التأكيد" : "تم الرفض", callback_data: "done" }]] } }), true);
   return new Response("ok");
 }
 

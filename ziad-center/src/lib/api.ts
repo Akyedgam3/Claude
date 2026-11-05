@@ -40,13 +40,13 @@ export async function markPaidManually(order: Order, by: string) {
   });
 }
 // ضغط صورة QR لتصبح صغيرة وتُحفظ داخل Firestore (بدون Storage)
-export function compressImage(file: File, max = 520): Promise<string> {
+export function compressImage(file: File, max = 520, jpeg = false): Promise<string> {
   return new Promise((res, rej) => {
     const img = new Image(); img.onerror = rej;
     img.onload = () => {
       const s = Math.min(1, max / Math.max(img.width, img.height));
       const c = document.createElement("canvas"); c.width = img.width * s; c.height = img.height * s;
-      c.getContext("2d")!.drawImage(img, 0, 0, c.width, c.height); res(c.toDataURL("image/png"));
+      c.getContext("2d")!.drawImage(img, 0, 0, c.width, c.height); res(jpeg ? c.toDataURL("image/jpeg", 0.82) : c.toDataURL("image/png"));
     };
     img.src = URL.createObjectURL(file);
   });

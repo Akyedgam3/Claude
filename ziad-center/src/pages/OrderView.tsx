@@ -39,7 +39,7 @@ export default function OrderView() {
           {err && <p className="text-rose-400 text-sm">{err}</p>}
         </div>
       )}
-      {pay === "pending" && <div className="card p-5 text-center text-yellow">⏳ {t("receiptSent")}</div>}
+      {pay === "pending" && <div className="card p-5 text-center text-yellow">{t("receiptSent")}</div>}
       {pay === "confirmed" && <div className="card p-5 text-center text-emerald-400 font-bold">{t("payConfirmed")}</div>}
       {pay === "rejected" && <div className="card p-5 text-center text-rose-400 font-bold">{t("payRejected")}</div>}
 

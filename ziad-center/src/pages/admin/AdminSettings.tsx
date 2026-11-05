@@ -6,6 +6,7 @@ import { useData, useQuery } from "../../lib/data";
 import { compressImage } from "../../lib/api";
 import { DEFAULT_SETTINGS, type Role, type Settings } from "../../lib/types";
 import { Page } from "../../components/Page";
+import Icon from "../../components/Icon";
 
 const ROLES: Role[] = ["customer", "designer", "press", "packing", "accountant", "admin"];
 export default function AdminSettings() {
@@ -25,7 +26,7 @@ export default function AdminSettings() {
         <div><label className="label">{t("account")} (Sham Cash)</label><input className="input" dir="ltr" value={s.shamcashAccount} onChange={e => setS({ ...s, shamcashAccount: e.target.value })} /></div>
         <div className="grid grid-cols-2 gap-3"><div><label className="label">{t("phone")}</label><input className="input" dir="ltr" value={s.phone} onChange={e => setS({ ...s, phone: e.target.value })} /></div>
           <div><label className="label">WhatsApp</label><input className="input" dir="ltr" value={s.whatsapp} onChange={e => setS({ ...s, whatsapp: e.target.value })} /></div></div>
-        <button className="btn btn-primary" onClick={save}>{saved ? "✓" : t("save")}</button>
+        <button className="btn btn-primary" onClick={save}>{saved ? <Icon n="check" size={18} /> : t("save")}</button>
       </div>
       <div className="card p-5">
         <h2 className="font-extrabold mb-3">{t("staff")}</h2>
