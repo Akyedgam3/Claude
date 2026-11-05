@@ -31,7 +31,7 @@ export default function AdminProducts() {
         <div className="fixed inset-0 bg-black/70 z-50 grid place-items-center p-4" onClick={() => setEdit(null)}>
           <div className="card p-5 w-full max-w-xl max-h-[90vh] overflow-auto space-y-3" onClick={e => e.stopPropagation()}>
             <div className="grid grid-cols-2 gap-2">
-              {(["ar", "en", "descAr", "descEn"] as const).map(k => <div key={k}><label className="label">{k}</label><input className="input" value={edit[k]} onChange={e => setEdit({ ...edit, [k]: e.target.value })} /></div>)}
+              {(["ar", "en", "descAr", "descEn", "code"] as const).map(k => <div key={k}><label className="label">{k}</label><input className="input" value={edit[k] ?? ""} onChange={e => setEdit({ ...edit, [k]: e.target.value })} /></div>)}
               <div><label className="label">basePrice $</label><input className="input" type="number" step="0.001" value={edit.basePrice} onChange={e => setEdit({ ...edit, basePrice: +e.target.value })} /></div>
               <div><label className="label">minQty</label><input className="input" type="number" value={edit.minQty} onChange={e => setEdit({ ...edit, minQty: +e.target.value })} /></div>
               <div><label className="label">hue</label><input className="input" type="number" value={edit.hue} onChange={e => setEdit({ ...edit, hue: +e.target.value })} /></div>
