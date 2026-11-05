@@ -30,7 +30,7 @@ export default function AdminSettings() {
       </div>
       <div className="card p-5">
         <h2 className="font-extrabold mb-3">{t("staff")}</h2>
-        <div className="divide-y divide-line">{users.map(u => <div key={u.id} className="py-2 flex items-center gap-3 text-sm"><span className="flex-1">{u.name} <span className="text-slate-400" dir="ltr">{u.email}</span></span>
+        <div className="divide-y divide-line">{users.map(u => <div key={u.id} className="py-2 flex items-center gap-3 text-sm"><span className="flex-1">{u.name} <span className="text-slate-600" dir="ltr">{u.email}</span></span>
           <select className="input !w-36" value={u.role} onChange={e => updateDoc(doc(db, "users", u.id), { role: e.target.value })}>{ROLES.map(r => <option key={r}>{r}</option>)}</select></div>)}</div>
       </div>
     </Page>

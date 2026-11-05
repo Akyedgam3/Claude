@@ -11,12 +11,12 @@ export default function Layout() {
   const { user, isStaff, logout } = useAuth();
   const { items } = useCart();
   const { settings } = useData();
-  const link = ({ isActive }: { isActive: boolean }) => `px-3 py-1.5 rounded-full text-sm transition ${isActive ? "bg-white/10 text-white" : "text-slate-300 hover:text-white"}`;
+  const link = ({ isActive }: { isActive: boolean }) => `px-3 py-1.5 rounded-full text-sm transition ${isActive ? "bg-ink text-white" : "text-slate-700 hover:text-ink"}`;
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="sticky top-3 z-40 mx-3 mt-3 rounded-full backdrop-blur-xl bg-[#0a0a0b]/75 border border-line">
+      <header className="sticky top-3 z-40 mx-3 mt-3 rounded-full backdrop-blur-xl bg-white/85 border border-line">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center gap-3">
-          <Link to="/" className="flex items-center gap-2 font-extrabold text-lg sm:me-0 me-auto"><Logo /><span className="hidden sm:inline grad-text">{t("brand")}</span></Link>
+          <Link to="/" className="flex items-center gap-2 font-extrabold text-lg sm:me-0 me-auto"><Logo /><span className="hidden sm:inline">{t("brand")}</span></Link>
           <nav className="flex-1 hidden sm:flex items-center gap-1 overflow-x-auto mx-2">
             <NavLink to="/" end className={link}>{t("home")}</NavLink>
             <NavLink to="/services" className={link}>{t("services")}</NavLink>
@@ -30,15 +30,15 @@ export default function Layout() {
         </div>
       </header>
       <main className="flex-1 pb-20 sm:pb-0"><Outlet /></main>
-      <nav className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-[#0a0a0b]/95 backdrop-blur border-t border-line grid grid-cols-4 pb-[env(safe-area-inset-bottom)]" aria-label="Main">
+      <nav className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur border-t border-line grid grid-cols-4 pb-[env(safe-area-inset-bottom)]" aria-label="Main">
         {([["/", "home", t("home")], ["/services", "box", t("services")], [user ? "/orders" : "/login", "orders", t("track")], ["/cart", "cart", t("cart")]] as const).map(([to, ic, label]) => (
-          <NavLink key={to} to={to} end={to === "/"} className={({ isActive }) => `flex flex-col items-center justify-center gap-0.5 min-h-14 text-[11px] ${isActive ? "text-gold" : "text-slate-400"}`}><Icon n={ic} size={22} />{label}</NavLink>
+          <NavLink key={to} to={to} end={to === "/"} className={({ isActive }) => `flex flex-col items-center justify-center gap-0.5 min-h-14 text-[11px] ${isActive ? "text-gold" : "text-slate-600"}`}><Icon n={ic} size={22} />{label}</NavLink>
         ))}
       </nav>
-      <footer className="border-t border-line mt-20 py-8 text-center text-sm text-slate-400">
+      <footer className="border-t border-line mt-24 py-10 text-center text-sm text-slate-600 bg-white">
         <div className="flex justify-center gap-4 mb-2">
-          {settings.phone && <a href={`tel:${settings.phone}`} className="hover:text-white">{settings.phone}</a>}
-          {settings.whatsapp && <a href={`https://wa.me/${settings.whatsapp.replace(/\D/g, "")}`} className="hover:text-white">WhatsApp</a>}
+          {settings.phone && <a href={`tel:${settings.phone}`} className="hover:text-ink">{settings.phone}</a>}
+          {settings.whatsapp && <a href={`https://wa.me/${settings.whatsapp.replace(/\D/g, "")}`} className="hover:text-ink">WhatsApp</a>}
         </div>
         © {new Date().getFullYear()} {t("brand")} — {t("footer")}
       </footer>

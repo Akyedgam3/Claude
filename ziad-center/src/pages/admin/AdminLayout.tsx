@@ -16,10 +16,10 @@ export default function AdminLayout() {
   const { rows } = useAllOrders(isStaff);
   if (!ready) return <div className="p-10"><div className="skeleton h-40" /></div>;
   if (!user) return <Navigate to="/login?next=/admin" />;
-  if (!isStaff) return <div className="p-16 text-center text-slate-400">{t("needAdmin")}</div>;
+  if (!isStaff) return <div className="p-16 text-center text-slate-600">{t("needAdmin")}</div>;
   const full = role === "admin", acct = role === "admin" || role === "accountant";
   const items = [["", "dash", t("dash"), true], ["orders", "orders", t("orders"), true], ["accounting", "money", t("accounting"), acct], ["products", "box", t("products"), full], ["settings", "gear", t("settings"), full]] as const;
-  const link = ({ isActive }: { isActive: boolean }) => `flex items-center gap-2 px-3 py-2 rounded-xl text-sm whitespace-nowrap ${isActive ? "bg-white/10 text-white font-bold" : "text-slate-400 hover:text-white"}`;
+  const link = ({ isActive }: { isActive: boolean }) => `flex items-center gap-2 px-3 py-2 rounded-xl text-sm whitespace-nowrap ${isActive ? "bg-ink text-white font-bold" : "text-slate-600 hover:text-ink"}`;
   return (
     <div className="min-h-screen md:flex">
       <aside className="md:w-56 border-b md:border-b-0 md:border-e border-line p-3 md:p-4 flex md:flex-col gap-1 overflow-x-auto md:sticky md:top-0 md:h-screen">

@@ -24,7 +24,7 @@ export default function AdminProducts() {
       <div className="flex items-center justify-between"><h1 className="text-3xl font-extrabold">{t("products")}</h1>
         <div className="flex gap-2"><button className="btn btn-ghost" onClick={seed}>Seed</button><button className="btn btn-primary" onClick={() => open(blank)}>+ {t("addProduct")}</button></div></div>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {products.map(p => <div key={p.id} className="card p-4 flex items-center gap-3"><Icon n="box" size={28} className="text-gold" /><div className="flex-1"><b>{pick(p)}</b><div className="text-xs text-slate-400">${p.basePrice} · min {p.minQty}</div></div>
+        {products.map(p => <div key={p.id} className="card p-4 flex items-center gap-3"><Icon n="box" size={28} className="text-gold" /><div className="flex-1"><b>{pick(p)}</b><div className="text-xs text-slate-600">${p.basePrice} · min {p.minQty}</div></div>
           <button className="btn btn-ghost !py-1 text-xs" onClick={() => open(p)} aria-label="Edit"><Icon n="edit" size={16} /></button><button className="text-rose-400" onClick={() => confirm("Delete?") && deleteDoc(doc(db, "products", p.id))}><Icon n="close" size={16} /></button></div>)}
       </div>
       {edit && (

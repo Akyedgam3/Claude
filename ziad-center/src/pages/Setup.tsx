@@ -32,9 +32,9 @@ export default function Setup() {
     <Page className="max-w-md mx-auto px-4 pt-20 text-center space-y-5">
       <h1 className="display text-4xl">{t("setupTitle")}</h1>
       {free === null && <div className="skeleton h-12" />}
-      {free && !done && <><p className="text-slate-400">{t("setupDesc")}</p><button className="btn btn-primary" disabled={busy} onClick={claim}>{busy ? t("sending") : t("setupBtn")}</button></>}
+      {free && !done && <><p className="text-slate-600">{t("setupDesc")}</p><button className="btn btn-primary" disabled={busy} onClick={claim}>{busy ? t("sending") : t("setupBtn")}</button></>}
       {(done || (free === false && role === "admin")) && <Link to="/admin/settings" className="btn btn-primary">{t("admin")} →</Link>}
-      {free === false && role !== "admin" && !done && <p className="text-slate-400">{t("setupDone")}</p>}
+      {free === false && role !== "admin" && !done && <p className="text-slate-600">{t("setupDone")}</p>}
       {err && <p className="text-rose-400 text-sm">{err}</p>}
     </Page>
   );

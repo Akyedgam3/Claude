@@ -9,6 +9,7 @@ const P: Record<string, string> = {
   home: "M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z",
   close: "M6 6l12 12M18 6 6 18",
   edit: "M4 20h4L19 9l-4-4L4 16zM13 7l4 4",
+  arrow: "M5 12h14m-6-6 6 6-6 6",
   bolt: "M13 2 4 14h7l-1 8 9-12h-7z",
   check: "M5 12l5 5L20 7",
   user: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0",

@@ -14,17 +14,17 @@ export default function Timeline({ order }: { order: Order }) {
           const done = !cancelled && i <= idx;
           return (
             <div key={s} className="flex-1 flex flex-col items-center relative">
-              {i > 0 && <div className="absolute top-4 end-1/2 w-full h-0.5 bg-line"><motion.div className="h-full bg-gradient-to-r from-gold to-magenta" initial={{ width: 0 }} animate={{ width: done ? "100%" : 0 }} transition={{ duration: .6, delay: i * .1 }} /></div>}
-              <motion.div initial={{ scale: .6 }} animate={{ scale: i === idx && !cancelled ? 1.2 : 1 }} className={`relative z-10 w-8 h-8 rounded-full grid place-items-center text-sm font-bold border-2 ${done ? "bg-gold border-gold text-ink" : "bg-ink border-line text-slate-400"}`}>{done ? <Icon n="check" size={16} /> : i + 1}</motion.div>
-              <span className={`text-[11px] sm:text-xs mt-2 text-center ${done ? "text-white" : "text-slate-400"}`}>{t(`s_${s}` as Key)}</span>
+              {i > 0 && <div className="absolute top-4 end-1/2 w-full h-0.5 bg-line"><motion.div className="h-full bg-gradient-to-r from-cyan to-magenta" initial={{ width: 0 }} animate={{ width: done ? "100%" : 0 }} transition={{ duration: .6, delay: i * .1 }} /></div>}
+              <motion.div initial={{ scale: .6 }} animate={{ scale: i === idx && !cancelled ? 1.2 : 1 }} className={`relative z-10 w-8 h-8 rounded-full grid place-items-center text-sm font-bold border-2 ${done ? "bg-ink border-ink text-white" : "bg-ink border-line text-slate-600"}`}>{done ? <Icon n="check" size={16} /> : i + 1}</motion.div>
+              <span className={`text-[11px] sm:text-xs mt-2 text-center ${done ? "text-ink font-medium" : "text-slate-600"}`}>{t(`s_${s}` as Key)}</span>
             </div>
           );
         })}
       </div>
       {cancelled && <p className="mt-4 text-center text-rose-400 font-bold">{t("s_cancelled")}</p>}
-      <ul className="mt-6 space-y-2 text-sm text-slate-300">
+      <ul className="mt-6 space-y-2 text-sm text-slate-700">
         {[...order.history].reverse().map((h, i) => (
-          <li key={i} className="flex gap-2"><span className="text-slate-400 tabular-nums">{new Date(h.at).toLocaleString(lang === "ar" ? "ar-SY" : "en-GB", { dateStyle: "short", timeStyle: "short" })}</span>
+          <li key={i} className="flex gap-2"><span className="text-slate-600 tabular-nums">{new Date(h.at).toLocaleString(lang === "ar" ? "ar-SY" : "en-GB", { dateStyle: "short", timeStyle: "short" })}</span>
             <span>{h.stage === "payment" ? t("pay") : t(`s_${h.stage}` as Key)}{h.note ? ` — ${h.note}` : ""}</span></li>
         ))}
       </ul>

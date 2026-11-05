@@ -14,7 +14,7 @@ export default function Cart() {
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false); const [err, setErr] = useState("");
 
-  if (!cart.items.length) return <Page className="text-center py-24"><Icon n="cart" size={56} className="mx-auto mb-4 text-gold" /><p className="text-slate-400 mb-6">{t("empty")}</p><Link to="/services" className="btn btn-primary">{t("browse")}</Link></Page>;
+  if (!cart.items.length) return <Page className="text-center py-24"><Icon n="cart" size={56} className="mx-auto mb-4 text-gold" /><p className="text-slate-600 mb-6">{t("empty")}</p><Link to="/services" className="btn btn-primary">{t("browse")}</Link></Page>;
   const submit = async () => {
     if (!user) return nav("/login?next=/cart");
     if (!f.name || !f.phone || !f.address) return setErr(t("required"));
@@ -37,8 +37,8 @@ export default function Cart() {
               <div className="text-4xl">{p?.icon}</div>
               <div className="flex-1 text-sm">
                 <b className="text-base">{p ? pick(p) : i.name}</b>
-                <div className="text-slate-400">{t("qty")}: {i.qty} {i.customSize && `• ${i.customSize}`}</div>
-                {i.notes && <div className="text-slate-400 italic">{i.notes}</div>}
+                <div className="text-slate-600">{t("qty")}: {i.qty} {i.customSize && `• ${i.customSize}`}</div>
+                {i.notes && <div className="text-slate-600 italic">{i.notes}</div>}
               </div>
               <div className="text-end"><b className="text-gold">{money(i.totalUSD, settings.usdToSyp)}</b><button onClick={() => cart.remove(n)} className="block text-xs text-rose-400 mt-1">{t("remove")}</button></div>
             </div>

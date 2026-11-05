@@ -31,11 +31,11 @@ export default function Accounting() {
   return (
     <Page className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3"><h1 className="text-3xl font-extrabold">{t("accounting")}</h1>
-        <div className="flex gap-2">{(["today", "month", "all"] as const).map(r => <button key={r} onClick={() => setRange(r)} className={`px-3 py-1 rounded-full text-xs border ${range === r ? "border-gold text-gold" : "border-line text-slate-400"}`}>{t(r)}</button>)}<button className="btn btn-ghost !py-1 text-xs" onClick={csv}>CSV</button></div></div>
+        <div className="flex gap-2">{(["today", "month", "all"] as const).map(r => <button key={r} onClick={() => setRange(r)} className={`px-3 py-1 rounded-full text-xs border ${range === r ? "border-gold text-gold" : "border-line text-slate-600"}`}>{t(r)}</button>)}<button className="btn btn-ghost !py-1 text-xs" onClick={csv}>CSV</button></div></div>
       <div className="grid grid-cols-3 gap-4">
-        <div className="card p-4"><div className="text-sm text-slate-400">{t("income")}</div><div className="text-2xl font-extrabold text-emerald-400">{money(inc, rate)}</div></div>
-        <div className="card p-4"><div className="text-sm text-slate-400">{t("expenses")}</div><div className="text-2xl font-extrabold text-rose-400">{money(exp, rate)}</div></div>
-        <div className="card p-4"><div className="text-sm text-slate-400">{t("profit")}</div><div className={`text-2xl font-extrabold ${inc - exp >= 0 ? "text-gold" : "text-rose-400"}`}>{money(inc - exp, rate)}</div></div>
+        <div className="card p-4"><div className="text-sm text-slate-600">{t("income")}</div><div className="text-2xl font-extrabold text-emerald-400">{money(inc, rate)}</div></div>
+        <div className="card p-4"><div className="text-sm text-slate-600">{t("expenses")}</div><div className="text-2xl font-extrabold text-rose-400">{money(exp, rate)}</div></div>
+        <div className="card p-4"><div className="text-sm text-slate-600">{t("profit")}</div><div className={`text-2xl font-extrabold ${inc - exp >= 0 ? "text-gold" : "text-rose-400"}`}>{money(inc - exp, rate)}</div></div>
       </div>
       <div className="card p-4 grid sm:grid-cols-5 gap-2 items-end">
         <select className="input" value={f.type} onChange={e => setF({ ...f, type: e.target.value as "income" | "expense" })}><option value="expense">{t("expenses")}</option><option value="income">{t("income")}</option></select>
@@ -44,9 +44,9 @@ export default function Accounting() {
         <div className="flex gap-2"><input className="input" type="number" placeholder={t("amount")} value={f.amount} onChange={e => setF({ ...f, amount: e.target.value })} /><button className="btn btn-primary" onClick={add}>+</button></div>
       </div>
       <div className="card divide-y divide-line">
-        {list.map(r => <div key={r.id} className="p-3 flex items-center gap-3 text-sm"><span className="text-slate-400 w-24">{new Date(r.date).toLocaleDateString("en-GB")}</span><span className="flex-1">{r.title} <span className="text-slate-400">· {r.category}</span></span>
+        {list.map(r => <div key={r.id} className="p-3 flex items-center gap-3 text-sm"><span className="text-slate-600 w-24">{new Date(r.date).toLocaleDateString("en-GB")}</span><span className="flex-1">{r.title} <span className="text-slate-600">· {r.category}</span></span>
           <b className={r.type === "income" ? "text-emerald-400" : "text-rose-400"}>{r.type === "income" ? "+" : "-"}{money(r.amountUSD, rate)}</b>
-          <button className="text-slate-400 hover:text-rose-400" onClick={() => confirm("Delete?") && deleteDoc(doc(db, "ledger", r.id))}><Icon n="close" size={16} /></button></div>)}
+          <button className="text-slate-600 hover:text-rose-400" onClick={() => confirm("Delete?") && deleteDoc(doc(db, "ledger", r.id))}><Icon n="close" size={16} /></button></div>)}
       </div>
     </Page>
   );
