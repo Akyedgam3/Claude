@@ -1,9 +1,9 @@
-name: Deploy website
-# In the repository: Settings → Pages → Source = "GitHub Actions"
+name: Deploy Ziad Center
+# GitHub: Settings -> Pages -> Source = "GitHub Actions"
 on:
   push:
     branches: [main, master, 'ccr-**']
-    paths: ['docs/**', 'index.html', 'js/**', 'lib/**', 'assets/**', 'sync-site.sh', 'ziad-center/**', '.github/workflows/pages.yml']
+    paths: ['ziad-center/**', '.github/workflows/pages.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -16,11 +16,9 @@ jobs:
     environment: { name: github-pages, url: '${{ steps.d.outputs.page_url }}' }
     steps:
       - uses: actions/checkout@v4
-      - run: ./sync-site.sh
-      # Ziad Center (React) -> docs/ziad
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm, cache-dependency-path: ziad-center/package-lock.json }
-      - name: Build Ziad Center
+      - name: Build
         working-directory: ziad-center
         env:
           VITE_BASE: ./
@@ -33,10 +31,8 @@ jobs:
         run: |
           npm ci
           npm run build
-          rm -rf ../docs/ziad && mkdir -p ../docs/ziad
-          cp -r dist/. ../docs/ziad/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
-        with: { path: docs }
+        with: { path: ziad-center/dist }
       - id: d
         uses: actions/deploy-pages@v4
