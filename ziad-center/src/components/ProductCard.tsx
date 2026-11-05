@@ -25,7 +25,7 @@ export default function ProductCard({ p }: { p: Product }) {
           <h3 className="font-extrabold text-lg">{pick(p)}</h3>
           <p className="text-sm text-slate-600 mt-1 line-clamp-2 min-h-10">{pick({ ar: p.descAr, en: p.descEn })}</p>
           <div className="mt-4 flex items-center justify-between text-sm"><span><span className="text-slate-600">{t("from")} </span><b>{money(p.basePrice * Math.max(1, p.minQty), settings.usdToSyp)}</b></span>
-            <span className="grid place-items-center w-9 h-9 rounded-full bg-ink text-white group-hover:bg-[var(--color-cta)] group-hover:text-ink transition-colors" aria-hidden><Icon n="arrow" size={16} className="rtl:-scale-x-100" /></span></div>
+            <span className="grid place-items-center w-9 h-9 rounded-full bg-ink text-white group-hover:bg-[var(--color-cta)] group-hover:text-white transition-colors" aria-hidden><Icon n="arrow" size={16} className="rtl:-scale-x-100" /></span></div>
         </div>
       </Link>
     </motion.div>
