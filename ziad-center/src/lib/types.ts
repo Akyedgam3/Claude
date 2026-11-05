@@ -17,6 +17,7 @@ export interface Product {
   id: string; ar: string; en: string; descAr: string; descEn: string;
   icon: string; image?: string; hue: number; basePrice: number; minQty: number; options: OptionGroup[]; active: boolean;
   code?: string; // كود المنتج الظاهر للزبون
+  art?: string; // رسمة بديلة من قطع الرف عند عدم وجود صورة
   sale?: { pct: number; ends: number }; // عرض فلاش: نسبة الخصم + وقت الانتهاء (ms)
 }
 export interface OrderItem {
