@@ -28,22 +28,22 @@ export default function Layout() {
   return (
     <div className="min-h-screen flex flex-col">
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-line" onMouseLeave={() => setMega(false)}>
-        <div className="max-w-6xl mx-auto px-4 h-[72px] flex items-center gap-4">
-          <Link to="/" className="flex items-center gap-2 font-extrabold text-lg text-ink me-auto lg:me-2"><Logo size={38} /><span className="leading-tight">{t("brand")}<span className="block text-[10px] font-medium tracking-[.2em] text-slate-600">PRINTING HOUSE</span></span></Link>
-          <nav className="hidden lg:flex items-center gap-4 flex-1">
+        <div className="max-w-6xl mx-auto px-4 h-[72px] flex items-center gap-2 sm:gap-4">
+          <Link to="/" className="flex items-center gap-2 font-extrabold text-lg text-ink me-auto lg:me-2"><Logo size={38} /><span className="leading-tight whitespace-nowrap">{t("brand")}<span className="hidden sm:block text-[10px] font-medium tracking-[.2em] text-slate-600">PRINTING HOUSE</span></span></Link>
+          <nav className="hidden lg:flex items-center gap-1 xl:gap-3 flex-1 min-w-0">
             <button className={`flex items-center gap-1 px-2 py-1 text-[15px] ${mega ? "text-ink" : "text-ink/80"}`} onMouseEnter={() => setMega(true)} onClick={() => setMega(m => !m)} aria-expanded={mega}>
               {tr("المنتجات", "Products")}<svg width="12" height="12" viewBox="0 0 24 24" aria-hidden className={`transition ${mega ? "rotate-180" : ""}`}><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" strokeWidth="2" /></svg>
             </button>
             {pages.map(([to, l]) => <NavLink key={to} to={to} className={link}>{l}</NavLink>)}
             {isStaff && <NavLink to="/admin" className={link}>{t("admin")}</NavLink>}
           </nav>
-          <form className="hidden xl:flex items-center gap-2 bg-[var(--color-paper)] rounded-full px-4 h-11 w-60 shrink-0 focus-within:ring-2 ring-[var(--color-cta)]" onSubmit={e => { e.preventDefault(); nav(`/services?q=${encodeURIComponent(q)}`); }}>
+          <form className="hidden 2xl:flex items-center gap-2 bg-[var(--color-paper)] rounded-full px-4 h-11 w-60 shrink-0 focus-within:ring-2 ring-[var(--color-cta)]" onSubmit={e => { e.preventDefault(); nav(`/services?q=${encodeURIComponent(q)}`); }}>
             <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" strokeWidth="2" /><path d="M20 20l-4-4" stroke="currentColor" strokeWidth="2" /></svg>
             <input value={q} onChange={e => setQ(e.target.value)} placeholder={tr("اسم المنتج أو الكود", "Product name or code")} aria-label={tr("بحث", "Search")} className="bg-transparent outline-none text-sm w-full" />
           </form>
-          <a href={quote} target={settings.whatsapp ? "_blank" : undefined} rel="noreferrer" className="btn btn-primary !min-h-11 !py-0 text-sm whitespace-nowrap hidden sm:inline-flex">
+          <span className="hidden sm:block"><a href={quote} target={settings.whatsapp ? "_blank" : undefined} rel="noreferrer" className="btn btn-primary !min-h-11 !py-0 text-sm whitespace-nowrap">
             <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden><path d="M4 20l1.3-3.900A8 8 0 1 1 8 19.500z" fill="none" stroke="currentColor" strokeWidth="1.800" strokeLinejoin="round" /></svg>{tr("اطلب عرض سعر", "Get a quote")}
-          </a>
+          </a></span>
           <div className="flex items-center gap-1">
             <button className="text-sm px-2 h-11 rounded-full hover:bg-ink/5" onClick={() => setLang(lang === "ar" ? "en" : "ar")} aria-label="Language">{lang === "ar" ? "EN" : "ع"}</button>
             <button className="text-sm px-2 h-11 rounded-full hover:bg-ink/5" onClick={() => setCur(cur === "SYP" ? "USD" : "SYP")} aria-label="Currency">{cur === "SYP" ? "ل.س" : "$"}</button>
