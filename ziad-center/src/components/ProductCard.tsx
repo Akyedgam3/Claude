@@ -7,6 +7,7 @@ import { blockOf } from "../lib/theme";
 import type { Product } from "../lib/types";
 import Art, { hasArt } from "./Art";
 import Icon from "./Icon";
+import { Heart } from "../lib/extras";
 
 export default function ProductCard({ p }: { p: Product }) {
   const { t, pick, money } = useI18n(); const { settings } = useData();
@@ -26,7 +27,8 @@ export default function ProductCard({ p }: { p: Product }) {
             : <Icon n="box" size={64} className="relative text-ink/60" />}
           <span className="absolute top-3 end-3 flex items-center gap-1 text-[10px] font-extrabold text-ink/80"><svg width="14" height="14" viewBox="0 0 28 28" aria-hidden><path d="M4 5h20L6 23h20" fill="none" stroke="currentColor" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" /></svg>ZIAD</span>
           <span className="absolute bottom-3 start-3 bg-white/90 rounded-full px-2.5 py-1 text-[10px] font-bold text-ink flex items-center gap-1" dir="ltr"><i className="w-1.5 h-1.5 rounded-full bg-[var(--color-cta)]" />{code}</span>
-          {sale > 0 && <span className="absolute top-3 start-3 bg-[var(--color-cta)] text-white text-xs font-bold px-2.5 py-1 rounded-full">-{sale}%</span>}
+          <Heart id={p.id} className="absolute top-3 start-3 z-10" />
+          {sale > 0 && <span className="absolute top-16 start-3 bg-[var(--color-cta)] text-white text-xs font-bold px-2.5 py-1 rounded-full">-{sale}%</span>}
         </div>
         <h3 className="mt-4 font-bold text-ink group-hover:text-[var(--color-cta)] transition-colors line-clamp-2">{pick(p)}</h3>
         <div className="mt-2 flex items-center gap-2 text-sm">
