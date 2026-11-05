@@ -1,9 +1,9 @@
-name: Deploy website
-# In the repository: Settings → Pages → Source = "GitHub Actions"
+name: Deploy Ziad Center
+# GitHub: Settings -> Pages -> Source = "GitHub Actions"
 on:
   push:
     branches: [main, master, 'ccr-**']
-    paths: ['docs/**', 'index.html', 'js/**', 'lib/**', 'assets/**', 'sync-site.sh']
+    paths: ['ziad-center/**', '.github/workflows/pages.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -16,9 +16,23 @@ jobs:
     environment: { name: github-pages, url: '${{ steps.d.outputs.page_url }}' }
     steps:
       - uses: actions/checkout@v4
-      - run: ./sync-site.sh
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: ziad-center/package-lock.json }
+      - name: Build
+        working-directory: ziad-center
+        env:
+          VITE_BASE: ./
+          VITE_HASH: '1'
+          VITE_FB_API_KEY: AIzaSyAmm6DSA2-ks66GvmTl9enK8MI9pmQtAiE
+          VITE_FB_AUTH_DOMAIN: zaincenter-b7761.firebaseapp.com
+          VITE_FB_PROJECT_ID: zaincenter-b7761
+          VITE_FB_APP_ID: 1:470398117057:web:caaa69c630c08b7c9da040
+          VITE_WORKER_URL: ${{ vars.WORKER_URL }}
+        run: |
+          npm ci
+          npm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
-        with: { path: docs }
+        with: { path: ziad-center/dist }
       - id: d
         uses: actions/deploy-pages@v4

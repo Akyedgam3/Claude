@@ -1,3 +1,5 @@
-launcher/game/
-installer/payload/*.exe
-*.syso
+node_modules
+dist
+.env
+.dev.vars
+design-system/**/*.tmp
