@@ -5,6 +5,7 @@ import { useI18n } from "../lib/i18n";
 import { useData } from "../lib/data";
 import { Page, Reveal } from "../components/Page";
 import ProductCard from "../components/ProductCard";
+import Icon from "../components/Icon";
 
 function Countdown({ to }: { to: number }) {
   const { t } = useI18n(); const [now, setNow] = useState(Date.now());
@@ -15,7 +16,7 @@ function Countdown({ to }: { to: number }) {
 }
 
 export default function Home() {
-  const { t, pick } = useI18n(); const { products } = useData();
+  const { t, pick, lang } = useI18n(); const { products } = useData();
   const { scrollY } = useScroll(); const y = useTransform(scrollY, [0, 700], [0, 140]);
   const flash = products.filter(p => p.sale && p.sale.ends > Date.now());
   const steps = [["01", t("st1"), t("st1d")], ["02", t("st2"), t("st2d")], ["03", t("st3"), t("st3d")], ["04", t("st4"), t("st4d")]];
@@ -53,14 +54,14 @@ export default function Home() {
       {flash.length > 0 && (
         <section className="max-w-6xl mx-auto px-4 mt-16">
           <div className="card p-6 bg-gradient-to-br from-gold/10 to-transparent border-gold/40">
-            <div className="flex items-center justify-between flex-wrap gap-4 mb-5"><h2 className="display text-3xl">⚡ {t("flash")}</h2><div className="flex items-center gap-3 text-sm text-slate-300">{t("endsIn")}<Countdown to={Math.min(...flash.map(p => p.sale!.ends))} /></div></div>
+            <div className="flex items-center justify-between flex-wrap gap-4 mb-5"><h2 className="display text-3xl"><Icon n="bolt" className="inline text-gold" /> {t("flash")}</h2><div className="flex items-center gap-3 text-sm text-slate-300">{t("endsIn")}<Countdown to={Math.min(...flash.map(p => p.sale!.ends))} /></div></div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">{flash.map(p => <ProductCard key={p.id} p={p} />)}</div>
           </div>
         </section>
       )}
 
       <section id="services" className="max-w-6xl mx-auto px-4 mt-20">
-        <Reveal><div className="flex items-end justify-between mb-8"><h2 className="display text-4xl md:text-5xl">{t("services")}</h2><Link to="/services" className="text-gold text-sm">{t("browse")} ←</Link></div></Reveal>
+        <Reveal><div className="flex items-end justify-between mb-8"><h2 className="display text-4xl md:text-5xl">{t("services")}</h2><Link to="/services" className="text-gold text-sm">{t("browse")} {lang === "ar" ? "←" : "→"}</Link></div></Reveal>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {products.slice(0, 8).map((p, i) => <Reveal key={p.id} delay={(i % 4) * .06}><ProductCard p={p} /></Reveal>)}
         </div>

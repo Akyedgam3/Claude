@@ -43,9 +43,9 @@ export default function Accounting() {
         <div className="flex gap-2"><input className="input" type="number" placeholder={t("amount")} value={f.amount} onChange={e => setF({ ...f, amount: e.target.value })} /><button className="btn btn-primary" onClick={add}>+</button></div>
       </div>
       <div className="card divide-y divide-line">
-        {list.map(r => <div key={r.id} className="p-3 flex items-center gap-3 text-sm"><span className="text-slate-500 w-24">{new Date(r.date).toLocaleDateString("en-GB")}</span><span className="flex-1">{r.title} <span className="text-slate-500">· {r.category}</span></span>
+        {list.map(r => <div key={r.id} className="p-3 flex items-center gap-3 text-sm"><span className="text-slate-400 w-24">{new Date(r.date).toLocaleDateString("en-GB")}</span><span className="flex-1">{r.title} <span className="text-slate-400">· {r.category}</span></span>
           <b className={r.type === "income" ? "text-emerald-400" : "text-rose-400"}>{r.type === "income" ? "+" : "-"}{money(r.amountUSD, rate)}</b>
-          <button className="text-slate-500 hover:text-rose-400" onClick={() => confirm("Delete?") && deleteDoc(doc(db, "ledger", r.id))}>✕</button></div>)}
+          <button className="text-slate-400 hover:text-rose-400" onClick={() => confirm("Delete?") && deleteDoc(doc(db, "ledger", r.id))}>✕</button></div>)}
       </div>
     </Page>
   );

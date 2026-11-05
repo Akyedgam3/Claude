@@ -17,7 +17,7 @@ body { background: var(--color-ink); color: #f5efe4; font-family: var(--font-san
 @keyframes marquee { to { transform: translateX(-50%); } }
 .marquee { display:flex; width:max-content; animation: marquee 30s linear infinite; }
 .card { background: linear-gradient(180deg, #17171a, #101012); border: 1px solid var(--color-line); border-radius: 1.1rem; }
-.btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; padding:.7rem 1.4rem; border-radius:999px; font-weight:700; transition:transform .2s, box-shadow .2s, opacity .2s; cursor:pointer; }
+.btn { min-height:44px; display:inline-flex; align-items:center; justify-content:center; gap:.5rem; padding:.7rem 1.4rem; border-radius:999px; font-weight:700; transition:transform .2s, box-shadow .2s, opacity .2s; cursor:pointer; }
 .btn:active { transform: scale(.97); }
 .btn-primary { background: linear-gradient(100deg,#f6e7c1,#e9b85b 45%,#f08a4b); color:#0a0a0b; box-shadow:0 8px 30px -8px #e9b85b88; }
 .btn-primary:hover { box-shadow:0 12px 40px -6px #f08a4baa; }
@@ -31,3 +31,9 @@ body { background: var(--color-ink); color: #f5efe4; font-family: var(--font-san
 .skeleton { background: linear-gradient(90deg,#17171a,#222226,#17171a); background-size:200% 100%; animation: sk 1.2s infinite; border-radius:.8rem; }
 @keyframes sk { to { background-position:-200% 0; } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+:focus-visible { outline: 2px solid var(--color-gold); outline-offset: 2px; border-radius: .5rem; }
+.input:focus-visible { outline: none; }
+select.input { min-height: 44px; }
+.input { min-height: 44px; }
+@media (hover: none) { .card:hover { transform: none; } }

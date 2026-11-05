@@ -8,6 +8,7 @@ import { uploadReceipt } from "../lib/api";
 import type { Order } from "../lib/types";
 import { Page } from "../components/Page";
 import Timeline from "../components/Timeline";
+import Icon from "../components/Icon";
 
 export default function OrderView() {
   const { id } = useParams(); const { t, pick, money } = useI18n(); const { settings, products } = useData();
@@ -29,12 +30,12 @@ export default function OrderView() {
         <div className="card p-6 text-center space-y-4 border-gold/50">
           <h2 className="text-xl font-extrabold">{t("payTitle")}</h2>
           <p className="text-sm text-slate-400">1) {t("payStep1")}</p>
-          {settings.shamcashQr ? <img src={settings.shamcashQr} alt="Sham Cash QR" className="mx-auto w-56 h-56 object-contain rounded-2xl bg-white p-2" /> : <div className="text-slate-500">{t("noQr")}</div>}
+          {settings.shamcashQr ? <img src={settings.shamcashQr} alt="Sham Cash QR" className="mx-auto w-56 h-56 object-contain rounded-2xl bg-white p-2" /> : <div className="text-slate-400">{t("noQr")}</div>}
           {settings.shamcashAccount && <p className="text-sm">{t("account")}: <b dir="ltr" className="select-all">{settings.shamcashAccount}</b></p>}
           <div className="text-2xl font-extrabold">{money(o.totalUSD, settings.usdToSyp)} <span className="text-sm text-slate-400" dir="ltr">(${o.totalUSD})</span></div>
           <p className="text-sm text-slate-400">2) {t("payStep2")}</p>
           <input ref={input} type="file" accept="image/*,.pdf" hidden onChange={e => send(e.target.files?.[0])} />
-          <button className="btn btn-primary" disabled={busy} onClick={() => input.current?.click()}>{busy ? t("sending") : "📤 " + t("uploadReceipt")}</button>
+          <button className="btn btn-primary" disabled={busy} onClick={() => input.current?.click()}>{busy ? t("sending") : <><Icon n="upload" size={18} /> {t("uploadReceipt")}</>}</button>
           {err && <p className="text-rose-400 text-sm">{err}</p>}
         </div>
       )}
@@ -45,7 +46,7 @@ export default function OrderView() {
       <div className="card p-5"><Timeline order={o} /></div>
       <div className="card p-5 space-y-2 text-sm">
         {o.items.map((i, n) => { const p = products.find(x => x.id === i.productId); return <div key={n} className="flex justify-between"><span>{p ? pick(p) : i.name} × {i.qty}{i.customSize && ` (${i.customSize})`}</span><b>{money(i.totalUSD, settings.usdToSyp)}</b></div>; })}
-        <div className="text-slate-500 pt-2 border-t border-line">{t(`p_${pay}` as Key)} • {o.address}</div>
+        <div className="text-slate-400 pt-2 border-t border-line">{t(`p_${pay}` as Key)} • {o.address}</div>
       </div>
     </Page>
   );
