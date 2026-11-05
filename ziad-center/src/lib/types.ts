@@ -36,7 +36,11 @@ export interface LedgerEntry {
 export interface Settings {
   usdToSyp: number; shamcashQr: string; shamcashAccount: string;
   phone: string; whatsapp: string; address: string;
+  email: string; aboutAr: string; aboutEn: string; shippingAr: string; shippingEn: string;
+  facebook: string; instagram: string; tiktok: string; telegram: string;
 }
 export const DEFAULT_SETTINGS: Settings = {
   usdToSyp: 13000, shamcashQr: "", shamcashAccount: "", phone: "", whatsapp: "", address: "",
+  email: "", aboutAr: "", aboutEn: "", shippingAr: "", shippingEn: "",
+  facebook: "", instagram: "", tiktok: "", telegram: "",
 };
