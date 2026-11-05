@@ -39,3 +39,6 @@ body { background: var(--color-paper); color: #1f2a3d; font-family: var(--font-s
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
 .outline-text { color: transparent; -webkit-text-stroke: 1.5px currentColor; }
+
+/* أزرار بزوايا حادة في كل الموقع */
+.btn, button, select, .input, a.rounded-full, form.rounded-full, label.rounded-full, a.rounded-full > span { border-radius: 0 !important; }

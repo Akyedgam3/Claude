@@ -89,3 +89,24 @@ export function Contact() {
     </Shell>
   );
 }
+
+export function Markets() {
+  const { lang } = useI18n(); const { settings } = useData(); const tr = (a: string, e: string) => (lang === "ar" ? a : e);
+  const rows = (settings.markets || "").split("\n").map(l => l.split("|").map(x => x.trim())).filter(r => r[0]);
+  return (
+    <Shell title={tr("الأسواق", "Markets")} sub={tr("المناطق التي نخدمها ونوصل إليها، ومن تتواصل معه في كل منطقة.", "Areas we serve and deliver to, and who to contact in each.")}>
+      {rows.length ? (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {rows.map(([city, phone, person], i) => (
+            <Reveal key={i} delay={(i % 3) * .05}><div className="rounded-[1.4rem] border border-line bg-white p-6 h-full">
+              <div className="w-10 h-10 rounded-full bg-[var(--color-cta)]/10 text-[var(--color-cta)] grid place-items-center"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden><path d="M12 21s-7-6.500-7-12a7 7 0 0 1 14 0c0 5.500-7 12-7 12z" fill="none" stroke="currentColor" strokeWidth="1.800" /><circle cx="12" cy="9" r="2.500" fill="currentColor" /></svg></div>
+              <h2 className="mt-4 text-xl font-extrabold text-ink">{city}</h2>
+              {person && <div className="text-sm text-slate-600 mt-1">{person}</div>}
+              {phone && <a href={waLink(phone, tr("مرحباً زياد سنتر", "Hello Ziad Center"))} target="_blank" rel="noreferrer" className="mt-4 inline-flex font-bold text-ink hover:text-[var(--color-cta)]" dir="ltr">{phone}</a>}
+            </div></Reveal>
+          ))}
+        </div>
+      ) : <div className="card p-8 text-slate-600">{tr("سيتم إضافة الأسواق ومناطق التوصيل قريباً.", "Markets and delivery areas coming soon.")}</div>}
+    </Shell>
+  );
+}

@@ -35,6 +35,7 @@ export default function AdminSettings() {
         </div>
         <div><label className="label">من نحن (عربي)</label><textarea className="input" rows={4} value={s.aboutAr} onChange={e => setS({ ...s, aboutAr: e.target.value })} /></div>
         <div><label className="label">About (English)</label><textarea className="input" dir="ltr" rows={4} value={s.aboutEn} onChange={e => setS({ ...s, aboutEn: e.target.value })} /></div>
+        <div><label className="label">الأسواق — سطر لكل سوق: المدينة | الهاتف | المسؤول</label><textarea className="input" rows={4} placeholder="دمشق | 0999 999 999 | أحمد" value={s.markets} onChange={e => setS({ ...s, markets: e.target.value })} /></div>
         <div><label className="label">الشحن والتوصيل (عربي)</label><textarea className="input" rows={4} value={s.shippingAr} onChange={e => setS({ ...s, shippingAr: e.target.value })} /></div>
         <div><label className="label">Shipping (English)</label><textarea className="input" dir="ltr" rows={4} value={s.shippingEn} onChange={e => setS({ ...s, shippingEn: e.target.value })} /></div>
         <button className="btn btn-primary" onClick={save}>{saved ? <Icon n="check" size={18} /> : t("save")}</button>
