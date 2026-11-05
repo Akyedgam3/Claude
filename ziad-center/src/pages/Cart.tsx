@@ -21,7 +21,8 @@ export default function Cart() {
     setBusy(true); setErr("");
     try {
       let designFile: string | undefined;
-      if (file) designFile = (await uploadDesign(file)).name;
+      // رفع ملف التصميم اختياري: إذا فشل (مثلاً الـ Worker غير مضبوط) لا نمنع الطلب
+      if (file) { try { designFile = (await uploadDesign(file)).name; } catch { designFile = undefined; } }
       const id = await createOrder({ uid: user.uid, customerName: f.name, phone: f.phone, address: f.address, items: cart.items, rate: settings.usdToSyp, designFile });
       cart.clear(); nav(`/orders/${id}`);
     } catch (e) { setErr(String((e as Error).message)); setBusy(false); }
