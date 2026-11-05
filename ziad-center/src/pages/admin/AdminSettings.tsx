@@ -26,6 +26,17 @@ export default function AdminSettings() {
         <div><label className="label">{t("account")} (Sham Cash)</label><input className="input" dir="ltr" value={s.shamcashAccount} onChange={e => setS({ ...s, shamcashAccount: e.target.value })} /></div>
         <div className="grid grid-cols-2 gap-3"><div><label className="label">{t("phone")}</label><input className="input" dir="ltr" value={s.phone} onChange={e => setS({ ...s, phone: e.target.value })} /></div>
           <div><label className="label">WhatsApp</label><input className="input" dir="ltr" value={s.whatsapp} onChange={e => setS({ ...s, whatsapp: e.target.value })} /></div></div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="label">{t("email")}</label><input className="input" dir="ltr" type="email" value={s.email} onChange={e => setS({ ...s, email: e.target.value })} /></div>
+          <div><label className="label">{t("address")}</label><input className="input" value={s.address} onChange={e => setS({ ...s, address: e.target.value })} /></div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          {(["facebook", "instagram", "tiktok", "telegram"] as const).map(k => <div key={k}><label className="label">{k} (URL)</label><input className="input" dir="ltr" placeholder="https://" value={s[k]} onChange={e => setS({ ...s, [k]: e.target.value })} /></div>)}
+        </div>
+        <div><label className="label">من نحن (عربي)</label><textarea className="input" rows={4} value={s.aboutAr} onChange={e => setS({ ...s, aboutAr: e.target.value })} /></div>
+        <div><label className="label">About (English)</label><textarea className="input" dir="ltr" rows={4} value={s.aboutEn} onChange={e => setS({ ...s, aboutEn: e.target.value })} /></div>
+        <div><label className="label">الشحن والتوصيل (عربي)</label><textarea className="input" rows={4} value={s.shippingAr} onChange={e => setS({ ...s, shippingAr: e.target.value })} /></div>
+        <div><label className="label">Shipping (English)</label><textarea className="input" dir="ltr" rows={4} value={s.shippingEn} onChange={e => setS({ ...s, shippingEn: e.target.value })} /></div>
         <button className="btn btn-primary" onClick={save}>{saved ? <Icon n="check" size={18} /> : t("save")}</button>
       </div>
       <div className="card p-5">

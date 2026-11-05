@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import Orders from "./pages/Orders";
 import OrderView from "./pages/OrderView";
 import Setup from "./pages/Setup";
+import { About, Contact, Offers, Shipping, Tips } from "./pages/Info";
 // لوحة الإدارة تُحمَّل عند الحاجة فقط = الموقع العام أسرع
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
 
@@ -28,6 +29,11 @@ export default function App() {
             <Route path="login" element={<Login />} />
             <Route path="orders" element={<Orders />} />
             <Route path="orders/:id" element={<OrderView />} />
+            <Route path="offers" element={<Offers />} />
+            <Route path="tips" element={<Tips />} />
+            <Route path="shipping" element={<Shipping />} />
+            <Route path="about" element={<About />} />
+            <Route path="contact" element={<Contact />} />
           </Route>
           <Route path="admin/*" element={<AdminLayout />} />
         </Routes>
